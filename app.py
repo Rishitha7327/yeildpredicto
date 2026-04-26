@@ -38,10 +38,12 @@ except Exception as e:
 from backend.routes.predict   import predict_bp
 from backend.routes.translate import translate_bp
 from backend.routes.data      import data_bp
+from backend.routes.chat      import chat_bp
 
 app.register_blueprint(predict_bp,   url_prefix="/api")
 app.register_blueprint(translate_bp, url_prefix="/api")
 app.register_blueprint(data_bp,      url_prefix="/api")
+app.register_blueprint(chat_bp,      url_prefix="/api")
 
 # ── Page routes ────────────────────────────────────────────
 @app.route('/')

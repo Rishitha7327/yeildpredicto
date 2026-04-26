@@ -108,3 +108,35 @@ All APIs have free tiers. The app works with fallback data even without keys.
 | GET | `/api/data/statistics` | Aggregate stats |
 | GET | `/api/data/recent` | Last 24h predictions |
 | GET | `/api/health` | Health check |
+| POST | `/api/chat` | Grok AI chat for agriculture questions |
+
+## 💬 Grok AI Chatbot
+
+The platform now includes a **floating Grok chatbot** available on every page that helps farmers with agriculture-related questions.
+
+### Features
+- 🤖 AI-powered answers about crop yields, farming techniques, and agriculture
+- 📱 Floating widget available on all pages
+- 💾 Chat history saved locally in browser
+- 🔄 Real-time responses using Grok API
+- 📲 Badge notification for unread messages
+
+### Setup Grok Chatbot
+
+1. **Get a Grok API Key:**
+   - Visit [console.x.ai](https://console.x.ai)
+   - Create an account and generate an API key
+
+2. **Add to .env file:**
+   ```bash
+   GROK_API_KEY=your_api_key_here
+   ```
+
+3. **Install dependencies:**
+   The `openai` library is already in `requirements.txt` for Grok API compatibility.
+
+4. **The chatbot will automatically:**
+   - Appear as a floating icon on all pages (bottom-right)
+   - Show on home, prediction, calendar, tips, and how-it-works pages
+   - Store conversation history locally
+   - Work without requiring user authentication
