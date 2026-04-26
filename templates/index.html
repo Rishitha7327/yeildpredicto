@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Yeildpredicto — AI Crop Yield Predictor</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}"/>
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/Main Logo.jpeg') }}"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+<style>
+  /* Page-only sidebar (keeps existing CSS untouched) */
+  body { padding-left: 0; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 25vw; max-width: 320px; z-index: 800;
+    background: rgba(253,246,227,0.96); border-right: 1px solid rgba(26,58,10,0.10);
+    padding: 20px 18px; backdrop-filter: blur(14px); overflow: auto;
+    transform: translateX(-110%);
+    transition: transform .22s ease;
+  }
+  .sidebar h2 { margin: 4px 8px 14px; font-family: 'Playfair Display', serif; color: #1a3a0a; font-size: 26px; }
+  .sidebar a {
+    display: block; padding: 16px 18px; margin: 6px 4px; border-radius: 12px;
+    text-decoration: none; color: #4a5e3a; font-weight: 600; font-size: 18px;
+    border: 1px solid rgba(26,58,10,0.08);
+    background: rgba(255,255,255,0.65);
+  }
+  .sidebar a:hover { border-color: rgba(26,58,10,0.18); color: #1a3a0a; }
+  .sidebar a.active {
+    background: var(--forest);
+    color: #fff;
+    border-color: rgba(26,58,10,0.25);
+    box-shadow: 0 10px 28px rgba(26,58,10,0.14);
+  }
+  .sidebar-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    border: 1px solid rgba(26,58,10,0.18);
+    background: rgba(255,255,255,0.95);
+    z-index: 860;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 6px 18px rgba(26,58,10,0.15);
+  }
+  .sidebar-toggle-in {
+    position: sticky;
+    top: 14px;
+    left: 0;
+    margin: 0 0 10px 4px;
+    display: none;
+  }
+  body.sidebar-open .sidebar-toggle-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  body.sidebar-open .sidebar-toggle-in {
+    display: flex;
+  }
+  .sidebar-toggle span {
+    display: block;
+    width: 26px;
+    height: 3px;
+    background: var(--forest);
+    border-radius: 3px;
+    position: relative;
+  }
+  .sidebar-toggle span::before,
+  .sidebar-toggle span::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 26px;
+    height: 3px;
+    background: var(--forest);
+    border-radius: 3px;
+  }
+  .sidebar-toggle span::before { top: -8px; }
+  .sidebar-toggle span::after  { top: 8px; }
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.18);
+    z-index: 790;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+  }
+  body.sidebar-open { padding-left: 25vw; }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+  body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+  /* Sidebar logo styles */
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    margin: 4px 8px 14px;
+    font-family: 'Playfair Display', serif;
+    color: #1a3a0a;
+    font-size: 26px;
+    font-weight: bold;
+  }
+  .sidebar-logo img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+  }
+  .sidebar-logo .logo-text {
+    margin-left: 10px;
+  }
+  .sidebar-logo .predict {
+    color: rgb(155, 140, 56);
+  }
+  /* Hide text when sidebar is collapsed */
+  .sidebar .logo-text {
+    display: none;
+  }
+  body.sidebar-open .sidebar .logo-text {
+    display: inline;
+  }
+  @media (max-width: 680px) {
+    body.sidebar-open { padding-left: 0; }
+  }
+</style>
+</head>
+<body data-page="home">
+
+  <button class="sidebar-toggle sidebar-toggle-out" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
+    <span></span>
+  </button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <div class="sidebar" id="sidebar">
+  <button class="sidebar-toggle sidebar-toggle-in" type="button" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true">
+    <span></span>
+  </button>
+  <br>
+  <div class="sidebar-logo">
+    <img src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto Logo">
+    <span class="logo-text">Yeild<span class="predict">Predicto</span></span>
+  </div>
+  <a href="{{ url_for('index') }}">🏠 Home</a>
+  <a href="{{ url_for('predict') }}">🌾 Prediction</a>
+  <a href="{{ url_for('how') }}">⚙️ How Yeildpredicto Works</a>
+  <a href="{{ url_for('calendar') }}">📅 Crop Calendar</a>
+  <a href="{{ url_for('tips') }}">💡 Tips & Insights</a>
+</div>
+
+<!-- ========== LOADER ========== -->
+<div class="loader" id="loader">
+  <img class="loader-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto Logo"/>
+  <div class="loader-name">Yeildpredicto</div>
+  <div class="loader-sub" data-lang="loader_sub">Loading AI Crop Intelligence...</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- ========== NAV ========== -->
+<nav id="mainNav">
+  <a class="nav-brand" href="{{ url_for('index') }}">
+    <img class="nav-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto"/>
+    <span class="nav-brand-name">Yeild<span>Predicto</span></span>
+  </a>
+  <div class="nav-right">
+   <label for="languageSwitcher" class="nav-lang-label" style="color: white;">
+    🌐 Select Language
+</label>
+    <select id="languageSwitcher" class="nav-lang">
+      <option value="en">English</option>
+      <option value="hi">हिन्दी</option>
+      <option value="te">తెలుగు</option>
+      <option value="ta">தமிழ்</option>
+      <option value="kn">ಕನ್ನಡ</option>
+      <option value="ml">മലയാളം</option>
+      <option value="mr">मराठी</option>
+      <option value="gu">ગુજરાતી</option>
+      <option value="pa">ਪੰਜਾਬੀ</option>
+      <option value="bn">বাংলা</option>
+      <option value="or">ଓଡ଼ିଆ</option>
+      <option value="as">অসমীয়া</option>
+      <option value="ur">اردو</option>
+      <option value="sa">संस्कृत</option>
+      <option value="kok">कोंकणी</option>
+      <option value="mni">Manipuri</option>
+      <option value="brx">Bodo</option>
+      <option value="doi">Dogri</option>
+      <option value="mai">Maithili</option>
+      <option value="sat">Santali</option>
+      <option value="ks">Kashmiri</option>
+      <option value="sd">Sindhi</option>
+      <option value="ne">Nepali</option>
+    </select>
+    <div class="nav-loc-pill" id="navLoc">📍 Detecting...</div>
+  </div>
+</nav>
+
+<!-- ========== COVER PAGE ========== -->
+<section class="cover-page" id="cover">
+  <img class="cover-page-img" src="{{ url_for('static', filename='images/CoverPage.jpeg') }}" alt="Cover background" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80'"/>
+  <div class="cover-page-overlay"></div>
+  <div class="cover-page-content">
+    <h1>Yeildpredicto</h1>
+    <p data-lang="cover_tagline">AI-powered crop yield prediction for smarter farming.</p>
+  </div>
+</section>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="home">
+  <div class="hero-bg-img">
+    <!-- Updated background to the attached field photo; place the file in project root as hero-bg.jpg -->
+    <img src="https://static.vecteezy.com/system/resources/previews/031/547/198/non_2x/a-panoramic-view-of-a-lush-green-farm-with-rows-of-crops-stretching-into-the-distance-showcasing-the-vastness-and-productivity-of-modern-agriculture-generative-ai-photo.jpeg" alt="Field background" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80'"/>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow" data-lang="hero_eyebrow">🌱 AI-Powered Agriculture Platform</div>
+      <h1 class="hero-headline">
+        <span data-lang="hero_headline_1">Smarter Farming</span><br/>
+        <span class="italic" data-lang="hero_headline_2">Starts Here.</span>
+      </h1>
+      <p class="hero-sub" data-lang="hero_sub">Get AI-powered crop yield predictions using your real-time GPS location. Enter just 4 inputs and our model trained on 10+ years of Indian agriculture data does the rest.</p>
+    </div>
+    <div class="hero-visual">
+      <img class="hero-main-photo"
+        src="{{ url_for('static', filename='images/Mangoes.webp') }}"
+        alt="wheat field"
+        onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900'"/>
+      <div class="hfc hfc-1">
+        <img class="hfc-icon" src="https://cdn0.iconfinder.com/data/icons/fruity-3/512/Mango-1024.png" alt="mango"/>
+        <div>
+          <div class="hfc-label" data-lang="hfc_top_label">Top Predicted Crop</div>
+          <div class="hfc-val">Mango — 92%</div>
+        </div>
+        <div class="hfc-badge">✓ AI</div>
+      </div>
+      <div class="hfc hfc-2">
+        <div class="hfc-icon-emoji">🌡️</div>
+        <div><div class="hfc-label" data-lang="hfc_temp_label">Temperature</div><div class="hfc-val">28°C</div></div>
+      </div>
+      <div class="hfc hfc-3">
+        <div class="hfc-icon-emoji">💧</div>
+        <div><div class="hfc-label" data-lang="hfc_yield_label">Est. Yield</div><div class="hfc-val">4.2 t/acre</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-strip">
+    <img class="hero-strip-img" src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=60" alt=""/>
+  </div>
+</section>
+
+<!-- ========== STATS ========== -->
+<div class="stats fi">
+  <div class="stats-inner">
+    <div class="stat"><div class="stat-num">28</div><div class="stat-label" data-lang="stat_states">STATES COVERED</div></div>
+    <div class="stat"><div class="stat-num">50+</div><div class="stat-label" data-lang="stat_varieties">CROP VARIETIES</div></div>
+    <div class="stat"><div class="stat-num">93%</div><div class="stat-label" data-lang="stat_accuracy">ACCURACY RATE</div></div>
+    <div class="stat"><div class="stat-num">13 Yrs</div><div class="stat-label" data-lang="stat_training">TRAINING DATA</div></div>
+  </div>
+</div>
+
+<!-- ========== MARQUEE ========== -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="mtrack"></div>
+</div>
+<br>
+<br>
+<br>
+<!-- ========== BANNER CTA ========== -->
+<div class="cta-banner fi">
+  <img class="cta-banner-img"
+    src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1600&q=85"
+    alt="farmer"
+    onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600'"/>
+  <div class="cta-banner-overlay">
+    <div class="cta-banner-content">
+      <h2 data-lang="cta_title">Ready to grow smarter?</h2>
+      <p data-lang="cta_desc">Join us to make better crop decisions and increase annual yields using our AI-powered platform.</p>
+      <a href="{{ url_for('predict') }}" class="cta-banner-btn" data-lang="cta_btn">🌾 Get My Free Prediction →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ========== HOW IT WORKS ==========
+<section class="section how-bg fi" id="how">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow" data-lang="how_eyebrow">Process</span>
+        <h2 class="h2" data-lang="how_title">How Yeildpredicto Works</h2>
+        <p class="lead" data-lang="how_lead">Three simple steps to AI-powered crop recommendations.</p>
+      </div>
+    </div>
+    <div class="how-grid">
+      <div class="how-card">
+        <img class="how-card-photo"
+          src="https://images.unsplash.com/photo-1617791160536-598cf32026fb?w=700&q=80"
+          alt="GPS location"
+          onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700'"/>
+        <div class="how-card-body">
+          <div class="how-step-badge">1</div>
+          <h3 data-lang="how_step1_title">Allow Location Access</h3>
+          <p data-lang="how_step1_desc">One click — GPS auto-pulls local soil type, climate, temperature, humidity, and annual rainfall. No manual entry needed.</p>
+        </div>
+        <div class="how-connector">→</div>
+      </div>
+      <div class="how-card">
+        <img class="how-card-photo"
+          src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=700&q=80"
+          alt="farmer input"
+          onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700'"/>
+        <div class="how-card-body">
+          <div class="how-step-badge">2</div>
+          <h3 data-lang="how_step2_title">Enter Crop Details</h3>
+          <p data-lang="how_step2_desc">Tell us crop type, season, farm size, and water resources. Our model trained on 10+ years of ICMR &amp; IMD data handles the rest.</p>
+        </div>
+        <div class="how-connector">→</div>
+      </div>
+      <div class="how-card">
+        <img class="how-card-photo"
+          src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=700&q=80"
+          alt="crop results"
+          onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700'"/>
+        <div class="how-card-body">
+          <div class="how-step-badge">3</div>
+          <h3 data-lang="how_step3_title">Get Yield Predictions</h3>
+          <p data-lang="how_step3_desc">Ranked crop recommendations with confidence scores, estimated yield, and optional comparison against any district in India.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- ========== CROP GALLERY ==========
+<section class="section gallery-bg fi" id="crops">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Crops</span>
+        <h2 class="h2">Crops We Predict</h2>
+        <p class="lead">120+ crop varieties across every agro-climatic zone in India.</p>
+      </div>
+    </div>
+    <div class="gallery-mosaic">
+      <div class="gp tall">
+        <img src="https://images.unsplash.com/photo-1536054024-cbfdbf2ca5f8?w=700&q=85" alt="rice" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Rice</div><div class="gp-sub">Oryza sativa • Kharif Season</div></div></div>
+      </div>
+      <div class="gp">
+        <img src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&q=85" alt="wheat" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Wheat</div><div class="gp-sub">Rabi Season</div></div></div>
+      </div>
+      <div class="gp">
+        <img src="https://images.unsplash.com/photo-1602491453631-e2a5ad90a131?w=600&q=85" alt="sugarcane" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Sugarcane</div><div class="gp-sub">Cash Crop</div></div></div>
+      </div>
+      <div class="gp wide">
+        <img src="https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&q=85" alt="cotton" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Cotton</div><div class="gp-sub">Gossypium hirsutum • Kharif</div></div></div>
+      </div>
+      <div class="gp">
+        <img src="https://images.unsplash.com/photo-1567306301408-9b74779a11af?w=600&q=85" alt="tomato" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Tomato</div><div class="gp-sub">Vegetable • Year Round</div></div></div>
+      </div>
+      <div class="gp">
+        <img src="https://images.unsplash.com/photo-1543362906-acfc16c67564?w=600&q=85" alt="groundnut" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Groundnut</div><div class="gp-sub">Oilseed Crop</div></div></div>
+      </div>
+      <div class="gp">
+        <img src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=600&q=85" alt="chilli" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="gp-overlay"><div><div class="gp-name">Chilli</div><div class="gp-sub">Spice Crop</div></div></div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- ========== PREDICT FORM ==========
+<section class="section predict-bg" id="predict">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow" data-lang="predict_eyebrow">Predict</span>
+        <h2 class="h2" data-lang="predict_title">Crop Yield Predictor</h2>
+        <p class="lead" data-lang="predict_lead">Auto-detects your location. Just tell us about your crop.</p>
+      </div>
+    </div>
+    <div class="form-card fi"> -->
+
+      <!-- Form Banner -->
+      <!-- <div class="form-banner">
+        <img class="form-banner-img"
+          src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80"
+          alt="farm"/>
+        <div class="form-banner-content">
+          <div>
+            <div class="form-banner-title" data-lang="form_banner_title">Smart Crop Prediction</div>
+            <div class="form-banner-sub" data-lang="form_banner_sub">GPS auto-detects location • Results in 30 seconds</div>
+          </div>
+          <div class="form-steps-nav">
+            <div class="fsn active" onclick="gFS(1)" data-lang="step_location">Location</div>
+            <div class="fsn" onclick="gFS(2)" data-lang="step_crop">Crop</div>
+            <div class="fsn" onclick="gFS(3)" data-lang="step_water">Water</div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- STEP 1: Location -->
+      <!-- <div class="form-body" id="fs1">
+        <div class="loc-card">
+          <div class="loc-top">
+            <div class="loc-left">
+              <div class="loc-icon-fallback">📍</div>
+              <div>
+                <div class="loc-title" data-lang="loc_title">Your Location</div>
+                <div class="loc-desc" data-lang="loc_desc">GPS auto-fetches soil &amp; climate data</div>
+              </div>
+            </div>
+            <button class="detect-btn" id="detectBtn" onclick="detectLoc()" data-lang="detect_btn">⊙ Detect My Location</button>
+          </div>
+          <div class="loc-bottom" id="locBottom">
+            <span style="font-size:13px;color:var(--ghost);" data-lang="loc_hint_click_detect">Click "Detect" to auto-fill location data</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.03em;">
+          <span data-lang="yo_question">Where do you want yield prediction?</span>
+        </div>
+        <div class="yt-grid">
+          <div class="yt-card active" id="yo-curr" onclick="setYO('curr')">
+            <img class="yt-card-img"
+              src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&q=70"
+              alt="current location" onerror="this.style.display='none'"/>
+            <div class="yt-card-body">
+              <div class="yt-card-title" data-lang="yo_curr_title">📍 My Current Location</div>
+              <div class="yt-card-desc" data-lang="yo_curr_desc">Predict yield for your detected location</div>
+            </div>
+          </div>
+          <div class="yt-card" id="yo-other" onclick="setYO('other')">
+            <img class="yt-card-img"
+              src="https://images.unsplash.com/photo-1574923327983-b52d4e39e7f6?w=400&q=70"
+              alt="map" onerror="this.style.display='none'"/>
+            <div class="yt-card-body">
+              <div class="yt-card-title" data-lang="yo_other_title">🗺️ Different Location</div>
+              <div class="yt-card-desc" data-lang="yo_other_desc">Compare yield anywhere in India</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="otherLocFields" style="display:none;margin-top:10px;">
+          <div class="other-loc">
+            <div class="field">
+              <label data-lang="state_label">State</label>
+              <select id="oState" onchange="loadDist()">
+                <option value="" data-lang="state_select_placeholder">Select state</option>
+                <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+                <option>Gujarat</option><option>Haryana</option><option>Karnataka</option>
+                <option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option>
+                <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+                <option>Tamil Nadu</option><option>Telangana</option>
+                <option>Uttar Pradesh</option><option>West Bengal</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-lang="district_label">District</label>
+              <select id="oDist"><option value="" data-lang="district_select_first">Select state first</option></select>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- STEP 2: Crop Details -->
+      <!-- <div class="form-body" id="fs2" style="display:none;"> -->
+
+        <!-- Row 1: Crop Category + Season -->
+        <!-- <div class="fields-grid">
+          <div class="field">
+            <label data-lang="crop_category_label">Crop Category</label>
+            <select id="cropType" onchange="onCropTypeChange()">
+              <option value="suggest" data-lang="crop_cat_suggest">🤖 Suggest best crop for me</option>
+              <option value="veg" data-lang="crop_cat_veg">🥦 Vegetables</option>
+              <option value="fruits" data-lang="crop_cat_fruits">🍎 Fruits</option>
+              <option value="rice" data-lang="crop_cat_cereals">🌾 Cereals &amp; Grains</option>
+              <option value="pulses" data-lang="crop_cat_pulses">🫘 Pulses</option>
+              <option value="cash" data-lang="crop_cat_cash">🌿 Cash Crops</option>
+              <option value="oil" data-lang="crop_cat_oil">🌻 Oilseeds</option>
+              <option value="spices" data-lang="crop_cat_spices">🌶️ Spices</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-lang="season_label">Season</label>
+            <select id="season">
+              <option value="" data-lang="season_placeholder">Select season</option>
+              <option>Kharif (Jun–Oct)</option>
+              <option>Rabi (Nov–Apr)</option>
+              <option>Zaid (Mar–Jun)</option>
+              <option>Whole Year</option>
+            </select>
+          </div>
+        </div> -->
+
+        <!-- Row 2: Specific Crop (shown only when category is selected) -->
+        <!-- <div class="sub-crop-wrap" id="subCropWrap" style="display:none;">
+          <div class="sub-crop-label">
+            <span class="sub-crop-icon">↳</span>
+            <span data-lang="subcrop_select_title">Select Specific Crop</span>
+            <span class="sub-crop-hint" data-lang="subcrop_select_hint">Choose a specific crop to get detailed yield prediction &amp; alternatives</span>
+          </div>
+          <div class="sub-crop-grid" id="subCropGrid"> -->
+            <!-- Filled dynamically by onCropTypeChange() -->
+          <!-- </div> -->
+          <!-- Quick info strip shown after a crop card is selected -->
+          <!-- <div class="sub-crop-info" id="subCropInfo" style="display:none;"></div>
+          <select id="subCropType" style="display:none;">
+            <option value="">-- select specific crop --</option>
+          </select>
+        </div> -->
+
+        <!-- Row 3: Area Size -->
+        <!-- <div class="field" style="margin-bottom:0;margin-top:16px;">
+          <label data-lang="area_size_label">Area Size</label>
+          <div class="area-wrap" style="margin-top:6px;">
+            <div class="field" style="margin-bottom:0;">
+              <input type="number" id="areaSize" placeholder="e.g. 5" data-lang-placeholder="area_placeholder" min="0" step="0.1"/>
+            </div>
+            <div class="unit-grp">
+              <button class="active" onclick="setUnit(this)" data-lang="unit_acres">Acres</button>
+              <button onclick="setUnit(this)" data-lang="unit_hectares">Hectares</button>
+              <button onclick="setUnit(this)" data-lang="unit_sqm">Sq.m</button>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- STEP 3: Water Resources -->
+      <!-- <div class="form-body" id="fs3" style="display:none;">
+        <div class="water-title">
+          <span data-lang="water_title">Water Resources</span>
+          <span class="multi-badge" data-lang="multi_select">multi-select</span>
+        </div>
+        <div class="wgrid" id="wGrid"></div>
+        <div class="wtags" id="wTags"></div>
+        <div class="warn-bar" id="wWarn" style="display:none;">
+          <span data-lang="warn_no_water">⚠️ No water source — only drought-resistant crops will be recommended.</span>
+        </div>
+      </div> -->
+
+      <!-- RESULTS -->
+      <!-- <div class="form-body results-area" id="resArea">
+        <div id="resContent"></div>
+      </div> -->
+
+      <!-- Form Footer -->
+      <!-- <div class="form-footer-bar" id="formFoot">
+        <div>
+          <div class="form-step-info" id="stepInfo" data-lang="step_info_1">Step 1 of 3</div>
+          <div class="form-step-dots">
+            <div class="step-dot active" id="dot1"></div>
+            <div class="step-dot" id="dot2"></div>
+            <div class="step-dot" id="dot3"></div>
+          </div>
+        </div>
+        <div class="form-btns">
+          <button class="btn-back" id="bkBtn" style="display:none;" onclick="prevS()" data-lang="back_btn">← Back</button>
+          <button class="btn-next" id="nxBtn" onclick="nextS()" data-lang="next_btn">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- ========== TESTIMONIALS ========== -->
+<!-- <section class="section testi-bg fi">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow" data-lang="testi_eyebrow">Farmers Love Us</span>
+        <h2 class="h2" data-lang="testi_title">Real Results. Real Farmers.</h2>
+        <p class="lead" data-lang="testi_lead">Thousands of farmers across India trust Yeildpredicto for data-driven crop decisions.</p>
+      </div>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"Yeildpredicto suggested cotton over rice this Kharif. My yield was 40% higher. The GPS-based soil matching is incredibly precise for my region in Gujarat."</p>
+        <div class="testi-author">
+          <img class="testi-photo" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=70" alt=""
+            onerror="this.outerHTML='<div class=testi-avatar-fallback>👨‍🌾</div>'"/>
+          <div>
+            <div class="testi-name">Rajan Patel</div>
+            <div class="testi-place">📍 Anand, Gujarat</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"The water resource feature saved my sugarcane last dry season. Switching to drip on Yeildpredicto's advice doubled my output and cut my water bill by half."</p>
+        <div class="testi-author">
+          <img class="testi-photo" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=70" alt=""
+            onerror="this.outerHTML='<div class=testi-avatar-fallback>👨‍🌾</div>'"/>
+          <div>
+            <div class="testi-name">Suresh Reddy</div>
+            <div class="testi-place">📍 Warangal, Telangana</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I used the location comparison to find a nearby district was better for groundnut. I leased land there and my income increased by 60% that season."</p>
+        <div class="testi-author">
+          <img class="testi-photo" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=70" alt=""
+            onerror="this.outerHTML='<div class=testi-avatar-fallback>👨‍🌾</div>'"/>
+          <div>
+            <div class="testi-name">Dharmesh Singh</div>
+            <div class="testi-place">📍 Ludhiana, Punjab</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- ========== CROP CALENDAR ========== -->
+<!-- <section class="section cal-bg fi" id="calendar">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow" data-lang="calendar_eyebrow">Planning</span>
+        <h2 class="h2" data-lang="calendar_title">Crop Calendar</h2>
+      </div>
+      <div class="cal-filters">
+        <button class="cal-filter-btn active" data-lang="cal_filter_all">All</button>
+        <button class="cal-filter-btn" data-lang="cal_filter_kharif">Kharif</button>
+        <button class="cal-filter-btn" data-lang="cal_filter_rabi">Rabi</button>
+        <button class="cal-filter-btn" data-lang="cal_filter_zaid">Zaid</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</section> -->
+
+<!-- ========== TIPS ========== -->
+<!-- <section class="section tips-bg fi" id="tips">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow" data-lang="tips_eyebrow">Knowledge</span>
+        <h2 class="h2" data-lang="tips_title">Tips &amp; Insights</h2>
+        <p class="lead" data-lang="tips_lead">Expert guidance from India's top agronomists.</p>
+      </div>
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80" alt="soil" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_soil_title">Soil Health</h3>
+          <p data-lang="tip_soil_desc">Test soil pH regularly. Most crops thrive between pH 6.0–7.0. Add lime to raise pH or sulfur to lower it for optimal absorption and stronger yields.</p>
+          <span class="tip-badge" data-lang="tip_badge_soil">Soil</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=600&q=80" alt="irrigation" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_irrigation_title">Smart Irrigation</h3>
+          <p data-lang="tip_irrigation_desc">Drip irrigation saves 50% more water vs flood. Water early morning to cut evaporation. Moisture sensors prevent costly overwatering damage.</p>
+          <span class="tip-badge" data-lang="tip_badge_water">Water</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=600&q=80" alt="fertilizer" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_fert_title">Fertilizer Timing</h3>
+          <p data-lang="tip_fert_desc">Apply nitrogen in split doses — 1/3 at sowing, 1/3 at tillering, 1/3 at flowering. Improves uptake and reduces runoff by 35%.</p>
+          <span class="tip-badge" data-lang="tip_badge_fert">Fertilizer</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1623048196786-0556e7e26a62?w=600&q=80" alt="crop rotation" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_rotation_title">Crop Rotation</h3>
+          <p data-lang="tip_rotation_desc">Rotate cereals with legumes every season. Legumes fix atmospheric nitrogen, cutting fertilizer cost by 30% for the next cereal crop.</p>
+          <span class="tip-badge" data-lang="tip_badge_soil">Soil</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=600&q=80" alt="pest" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_pest_title">Pest Management</h3>
+          <p data-lang="tip_pest_desc">IPM combines biological and chemical controls. Monitor weekly — a 10% infestation is far easier to control than 50%, saving your entire harvest.</p>
+          <span class="tip-badge" data-lang="tip_badge_pest">Pest Control</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <img class="tip-card-img" src="https://images.unsplash.com/photo-1601472544462-c67e2c1e3de3?w=600&q=80" alt="climate" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600'"/>
+        <div class="tip-card-body">
+          <h3 data-lang="tip_climate_title">Climate Adaptation</h3>
+          <p data-lang="tip_climate_desc">Drought-tolerant varieties for erratic rainfall regions. Mulching cuts soil temperature 5–8°C and retains 70% more moisture in peak summer.</p>
+          <span class="tip-badge" data-lang="tip_badge_climate">Climate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">
+        <img class="footer-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto"/>
+        <span class="footer-brand-name">Yeildpredicto</span>
+      </div>
+      <p class="footer-tagline" data-lang="footer_tagline">AI-powered crop yield prediction helping Indian farmers make data-driven decisions for better harvests.</p>
+      <div class="footer-crop-thumbs">
+        <img src="/Frontend/images/linseed.png" alt="" onerror="this.style.display='none'"/>
+        <img src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=120&q=50" alt="" onerror="this.style.display='none'"/>
+        <img src="/Frontend/images/grapes.png" alt="" onerror="this.style.display='none'"/>
+        <img src="https://images.unsplash.com/photo-1567306301408-9b74779a11af?w=120&q=50" alt="" onerror="this.style.display='none'"/>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4 data-lang="footer_product">Product</h4>
+      <a href="{{ url_for('predict') }}" data-lang="footer_predict">Predict Yield</a>
+      <a href="{{ url_for('calendar') }}" data-lang="footer_calendar">Crop Calendar</a>
+      <a href="{{ url_for('index') }}" data-lang="footer_dashboard">Dashboard</a>
+      <a href="#" data-lang="footer_api">API</a>
+    </div>
+    <div class="footer-col">
+      <h4 data-lang="footer_resources">Resources</h4>
+      <a href="https://ijirt.org/publishedpaper/IJIRT180279_PAPER.pdf" data-lang="footer_docs">Documentation</a>
+      <a href="https://ieeexplore.ieee.org/abstract/document/10489432" data-lang="footer_research">Research</a>
+      <a href="https://www.youtube.com/watch?v=cg-Tf9PJYr8&t=1s" data-lang="footer_blog">Blog</a>
+      <a href="#" data-lang="footer_community">Community</a>
+    </div>
+    <div class="footer-col">
+      <h4 data-lang="footer_company">Company</h4>
+      <a href="#" data-lang="footer_about">About Us</a>
+      <a href="#" data-lang="footer_contact">Contact</a>
+      <a href="#" data-lang="footer_privacy">Privacy</a>
+      <a href="#" data-lang="footer_terms">Terms</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p data-lang="footer_rights">© 2026 Yeildpredicto. All rights reserved.</p>
+    <p data-lang="footer_disclaimer">⚠ AI estimates only. Consult local agronomists for final decisions.</p>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lang.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  // Sidebar active highlight
+  (function () {
+    const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    document.querySelectorAll('.sidebar a').forEach(a => {
+      const href = (a.getAttribute('href') || '').toLowerCase();
+      if (href === current) a.classList.add('active');
+    });
+  })();
+</script>
+<script>
+  // Sidebar toggle (hamburger button)
+  (function () {
+    const body = document.body;
+    const btnOut = document.querySelector('.sidebar-toggle-out');
+    const btnIn  = document.querySelector('.sidebar-toggle-in');
+    const overlay = document.getElementById('sidebarOverlay');
+    const KEY = 'yeildpredicto_sidebar_open';
+    if (!btnOut || !btnIn) return;
+
+    const setOpen = (open) => {
+      body.classList.toggle('sidebar-open', open);
+      btnOut.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btnOut.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      btnIn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btnIn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      sessionStorage.setItem(KEY, open ? '1' : '0');
+    };
+
+    // default closed; restore last state if any
+    setOpen(sessionStorage.getItem(KEY) === '1');
+
+    btnOut.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
+    btnIn.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
+    overlay?.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('.sidebar a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+  })();
+</script>
+</body>
+</html>

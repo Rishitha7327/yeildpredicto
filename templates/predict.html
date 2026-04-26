@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Yeildpredicto — Prediction</title>
+   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <style>
+    body { padding-left: 0; background: #f5f0e8; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 25vw; max-width: 320px; z-index: 800;
+      background: rgba(253,246,227,0.96); border-right: 1px solid rgba(26,58,10,0.10);
+      padding: 18px 14px; backdrop-filter: blur(14px); overflow: auto;
+      transform: translateX(-110%); transition: transform .22s ease;
+    }
+    .sidebar h2 { margin: 4px 8px 14px; font-family: 'Playfair Display', serif; color: #1a3a0a; font-size: 26px; }
+    .sidebar a {
+      display: block; padding: 16px 18px; margin: 6px 4px; border-radius: 12px;
+      text-decoration: none; color: #4a5e3a; font-weight: 600; font-size: 18px;
+      border: 1px solid rgba(26,58,10,0.08); background: rgba(255,255,255,0.65);
+    }
+    .sidebar a:hover { border-color: rgba(26,58,10,0.18); color: #1a3a0a; }
+    .sidebar a.active { background: var(--forest); color: #fff; border-color: rgba(26,58,10,0.25); box-shadow: 0 10px 28px rgba(26,58,10,0.14); }
+    .sidebar-logo { display: flex; align-items: center; margin: 4px 8px 14px; font-family: 'Playfair Display', serif; color: #1a3a0a; font-size: 26px; font-weight: bold; }
+    .sidebar-logo img { width: 42px; height: 42px; border-radius: 50%; }
+    .sidebar-logo .logo-text { margin-left: 10px; }
+    .sidebar-logo .predict { color: rgb(155, 140, 56); }
+    .sidebar .logo-text { display: none; }
+    body.sidebar-open .sidebar .logo-text { display: inline; }
+    .sidebar-toggle {
+      position: fixed; top: 14px; left: 14px; width: 44px; height: 44px;
+      border-radius: 12px; border: 1px solid rgba(26,58,10,0.14);
+      background: rgba(255,255,255,0.85); z-index: 850;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; backdrop-filter: blur(14px);
+    }
+    .sidebar-toggle-in { position: sticky; top: 14px; left: 0; margin: 0 0 10px 4px; display: none; }
+    body.sidebar-open .sidebar-toggle-out { opacity: 0; pointer-events: none; }
+    body.sidebar-open .sidebar-toggle-in { display: flex; }
+    .sidebar-toggle span { display: block; width: 18px; height: 2px; background: var(--forest); border-radius: 2px; position: relative; }
+    .sidebar-toggle span::before, .sidebar-toggle span::after { content: ''; position: absolute; left: 0; width: 18px; height: 2px; background: var(--forest); border-radius: 2px; }
+    .sidebar-toggle span::before { top: -6px; }
+    .sidebar-toggle span::after { top: 6px; }
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.18); z-index: 790; opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+    body.sidebar-open { padding-left: 25vw; }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+    @media (max-width: 680px) { body.sidebar-open { padding-left: 0; } }
+
+    /* ── HERO ── */
+    .predict-hero {
+      position: relative; height: 380px; overflow: hidden;
+      margin-top: 110px; /* nav height */
+    }
+    .predict-hero-img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.48) saturate(1.3);
+    }
+    .predict-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, rgba(10,30,5,0.65) 0%, rgba(26,58,10,0.25) 70%, rgba(200,134,10,0.1) 100%);
+    }
+    .predict-hero-content {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0 7% 52px;
+    }
+    .predict-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 14px; background: rgba(200,134,10,0.22);
+      border: 1px solid rgba(200,134,10,0.5); border-radius: 20px;
+      font-size: 11px; font-weight: 700; color: #f0c040;
+      letter-spacing: .10em; text-transform: uppercase; margin-bottom: 14px;
+      width: fit-content;
+    }
+    .predict-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5.5vw, 66px);
+      font-weight: 800; color: #fff; line-height: 1.05; margin-bottom: 12px;
+      text-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .predict-hero-sub {
+      font-size: 16px; color: rgba(255,255,255,0.72); font-weight: 400;
+    }
+
+    /* ── PAGE BODY ── */
+    .predict-page {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 56px 5% 100px;
+    }
+    .predict-workspace {
+      display: grid;
+      grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+      gap: 32px;
+      align-items: start;
+      margin-top: 34px;
+    }
+    .predict-side-guide {
+      position: sticky;
+      top: 132px;
+      background: #fff;
+      border: 1.5px solid rgba(26,58,10,0.1);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 50px rgba(26,58,10,0.08);
+    }
+    .side-guide-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .side-guide-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--forest);
+      line-height: 1.12;
+      margin-bottom: 10px;
+    }
+    .side-guide-copy {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+    .side-guide-list {
+      display: grid;
+      gap: 10px;
+    }
+    .side-guide-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      background: var(--pale);
+      border-radius: 12px;
+      border: 1px solid rgba(26,58,10,0.08);
+    }
+    .side-guide-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--forest);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .side-guide-item strong {
+      display: block;
+      font-size: 13px;
+      color: var(--forest);
+      margin-bottom: 3px;
+    }
+    .side-guide-item span {
+      display: block;
+      font-size: 11px;
+      color: var(--ghost);
+      line-height: 1.5;
+    }
+    .predict-form {
+      min-width: 0;
+      background: rgba(255,255,255,0.56);
+      border: 1px solid rgba(26,58,10,0.06);
+      border-radius: 22px;
+      padding: 0 28px 32px;
+    }
+
+    /* ── SECTION ROWS ── */
+    .predict-section {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 0 60px;
+      padding: 54px 0;
+      border-bottom: 1px solid rgba(26,58,10,0.08);
+    }
+    .predict-section:last-of-type { border-bottom: none; }
+
+    /* Label column */
+    .ps-label { padding-top: 2px; }
+    .ps-num {
+      display: block; font-family: 'Playfair Display', serif;
+      font-size: 60px; font-weight: 800; color: rgba(26,58,10,0.07);
+      line-height: 1; margin-bottom: 10px; letter-spacing: -0.04em;
+    }
+    .ps-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 21px; font-weight: 700; color: var(--forest); margin-bottom: 8px;
+    }
+    .ps-desc { font-size: 13px; color: var(--ghost); line-height: 1.7; }
+    .ps-badge {
+      display: inline-block; margin-top: 14px;
+      padding: 4px 12px; background: var(--pale);
+      border: 1px solid rgba(26,58,10,0.14);
+      border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--leaf);
+    }
+
+    /* Body column */
+    .ps-body { padding-top: 2px; }
+
+    /* ── LOCATION ── */
+    .loc-detect-card {
+      background: #fff; border: 1.5px solid rgba(26,58,10,0.12);
+      border-radius: 16px; overflow: hidden; margin-bottom: 18px;
+    }
+    .loc-detect-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; gap: 16px;
+    }
+    .loc-detect-left { display: flex; align-items: center; gap: 14px; }
+    .loc-icon-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--forest), var(--leaf));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 21px; flex-shrink: 0;
+      box-shadow: 0 6px 18px rgba(26,58,10,0.22);
+    }
+    .loc-detect-title { font-size: 15px; font-weight: 700; color: var(--forest); }
+    .loc-detect-sub { font-size: 12px; color: var(--ghost); margin-top: 2px; }
+    .detect-btn {
+      padding: 11px 22px; background: var(--forest); color: #fff;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .detect-btn:hover { background: var(--leaf); transform: translateY(-1px); box-shadow: 0 8px 22px rgba(26,58,10,0.22); }
+    .loc-status-bar {
+      padding: 13px 24px; background: var(--pale);
+      border-top: 1px solid rgba(26,58,10,0.07);
+      font-size: 13px; color: var(--ghost);
+    }
+
+    /* yield-origin toggle */
+    .loc-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+    .loc-type-card {
+      border: 2px solid rgba(26,58,10,0.1); border-radius: 13px;
+      overflow: hidden; cursor: pointer; transition: all .22s; background: #fff;
+    }
+    .loc-type-card:hover { border-color: rgba(26,58,10,0.3); box-shadow: 0 6px 22px rgba(26,58,10,0.09); }
+    .loc-type-card.active { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(26,58,10,0.1); }
+    .loc-type-img { width: 100%; height: 88px; object-fit: cover; transition: transform .4s; }
+    .loc-type-card:hover .loc-type-img { transform: scale(1.05); }
+    .loc-type-body { padding: 14px 16px; }
+    .loc-type-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+    .loc-type-card.active .loc-type-title { color: var(--forest); }
+    .loc-type-desc { font-size: 12px; color: var(--ghost); margin-top: 3px; }
+    .other-loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+
+    /* ── FIELDS ── */
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+    .field select, .field input[type="number"] {
+      padding: 13px 16px; border: 1.5px solid rgba(26,58,10,0.14);
+      border-radius: 10px; font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--ink); background: #fff; appearance: none;
+      transition: border .2s, box-shadow .2s;
+    }
+    .field select:focus, .field input:focus {
+      outline: none; border-color: var(--forest);
+      box-shadow: 0 0 0 3px rgba(26,58,10,0.08);
+    }
+
+    /* ── CROP ── */
+    .crop-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .sub-crop-panel {
+      background: var(--pale); border: 1.5px solid rgba(26,58,10,0.12);
+      border-radius: 14px; padding: 18px; margin-bottom: 20px;
+    }
+    .sub-crop-panel-title {
+      font-size: 13px; font-weight: 700; color: var(--forest);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .scp-hint { font-size: 11px; font-weight: 400; color: var(--ghost); margin-left: 4px; }
+    .sub-crop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+    .sub-crop-card { border: 2px solid rgba(26,58,10,0.1); border-radius: 10px; overflow: hidden; cursor: pointer; transition: all .22s; background: #fff; }
+    .sub-crop-card:hover { border-color: var(--leaf); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,58,10,0.1); }
+    .sub-crop-card.active { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(26,58,10,0.12); }
+    .sc-img { width: 100%; height: 70px; object-fit: cover; transition: transform .4s; }
+    .sub-crop-card:hover .sc-img { transform: scale(1.07); }
+    .sc-body { padding: 8px 10px; }
+    .sc-name { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-yield { font-size: 11px; color: var(--forest); font-weight: 600; }
+    .sc-water { font-size: 10px; margin-top: 3px; padding: 2px 6px; border-radius: 20px; display: inline-block; font-weight: 500; }
+    .sc-water.low { background: #e8f4e8; color: var(--leaf); }
+    .sc-water.medium { background: #fef6e0; color: var(--amber); }
+    .sc-water.high { background: #e8f0fe; color: #1a56a0; }
+    .sub-crop-info {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 12px; padding: 11px 16px;
+      background: var(--forest); border-radius: 10px;
+      font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9);
+    }
+    .sub-crop-info span { display: flex; align-items: center; gap: 5px; }
+
+    /* area */
+    .area-row { display: flex; gap: 10px; align-items: flex-end; }
+    .area-row .field { flex: 1; }
+    .unit-grp { display: flex; border: 1.5px solid rgba(26,58,10,0.14); border-radius: 10px; overflow: hidden; height: 48px; }
+    .unit-grp button { flex: 1; border: none; background: #fff; color: var(--ghost); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; padding: 0 12px; white-space: nowrap; }
+    .unit-grp button.active { background: var(--forest); color: #fff; }
+    .unit-grp button + button { border-left: 1px solid rgba(26,58,10,0.1); }
+
+    /* ── WATER RESOURCES ── */
+    .water-header-row {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+    }
+    .water-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+    .multi-badge { font-size: 11px; background: rgba(26,58,10,0.08); color: var(--leaf); padding: 4px 10px; border-radius: 20px; font-weight: 700; }
+    
+    /* Water resources info card */
+    .water-info-card {
+      background: linear-gradient(135deg, rgba(26,58,10,0.02), rgba(26,134,200,0.02));
+      border: 1.5px solid rgba(26,134,200,0.15); border-radius: 14px;
+      padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 14px;
+    }
+    .water-info-icon {
+      font-size: 28px; flex-shrink: 0; line-height: 1;
+    }
+    .water-info-text {
+      font-size: 13px; color: var(--ghost); line-height: 1.6;
+    }
+    .water-info-text strong {
+      color: var(--forest); font-weight: 700;
+    }
+
+    .water-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 12px; margin-bottom: 16px;
+    }
+    .wc {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 12px 16px; gap: 8px;
+      border: 2px solid rgba(26,58,10,0.1); border-radius: 14px;
+      cursor: pointer; transition: all .22s; background: #fff;
+      text-align: center; font-size: 13px; font-weight: 600; color: var(--ink);
+      position: relative;
+    }
+    .wc-icon { font-size: 30px; line-height: 1; }
+    .wc:hover { border-color: rgba(26,58,10,0.28); background: var(--pale); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,58,10,0.09); }
+    .wc.sel { background: rgba(26,58,10,0.06); border-color: var(--forest); color: var(--forest); box-shadow: 0 0 0 3px rgba(26,58,10,0.1); }
+    .wc .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(26,58,10,0.22); transition: all .2s; margin-top: 2px; }
+    .wc.sel .dot { background: var(--forest); border-color: var(--forest); }
+    
+    /* Water source details */
+    .wc-details {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: var(--forest); color: #fff; padding: 8px 12px;
+      border-radius: 8px; font-size: 11px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+      margin-bottom: 8px; z-index: 10; font-weight: 500;
+    }
+    .wc:hover .wc-details { opacity: 1; }
+    
+    .wtags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; min-height: 26px; }
+    .wtag { padding: 4px 12px; border-radius: 20px; font-size: 12px; background: var(--pale); color: var(--leaf); border: 1px solid rgba(26,58,10,0.13); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .wtag-remove { cursor: pointer; font-weight: 800; }
+    .warn-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #fffbe6; border: 1px solid #f0c040; border-radius: 10px; font-size: 13px; color: #856404; }
+
+    /* ── CTA ── */
+    .predict-cta-wrap { padding: 52px 0 0; }
+    .predict-cta-inner {
+      background: linear-gradient(140deg, var(--forest) 0%, #2b5c1e 55%, #1a3a0a 100%);
+      border-radius: 22px; padding: 52px 44px;
+      position: relative; overflow: hidden; text-align: center;
+    }
+    .predict-cta-inner::after {
+      content: '🌾';
+      position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
+      font-size: 130px; opacity: 0.07; pointer-events: none; line-height: 1;
+    }
+    .predict-cta-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px;
+    }
+    .predict-cta-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 30px; line-height: 1.6; }
+    .predict-cta-btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 18px 56px; font-size: 17px; font-weight: 800;
+      background: #fff; color: var(--forest);
+      border: none; border-radius: 14px; cursor: pointer;
+      transition: all .25s; letter-spacing: 0.01em;
+      box-shadow: 0 16px 44px rgba(0,0,0,0.22); font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .predict-cta-btn:hover { transform: translateY(-3px); box-shadow: 0 24px 56px rgba(0,0,0,0.28); background: var(--pale); }
+
+    /* ── RESULTS ── */
+    .results-area { display: none; margin-top: 52px; }
+    .results-area.show { display: block; animation: fadeUp .5s ease both; }
+    .results-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px; font-weight: 800; color: var(--forest);
+      margin-bottom: 24px; padding-bottom: 18px;
+      border-bottom: 2px solid rgba(26,58,10,0.1);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 14px; }
+    .res-tile {
+      background: #fff; border-radius: 14px; padding: 20px 22px;
+      border: 1.5px solid rgba(26,58,10,0.08);
+    }
+    .res-tile-label { font-size: 11px; font-weight: 700; color: var(--ghost); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 9px; }
+    .res-tile-value { font-size: 22px; font-weight: 800; color: var(--forest); font-family: 'Playfair Display', serif; }
+    .res-tile-sub { font-size: 12px; color: var(--ghost); margin-top: 3px; }
+    .res-tile.highlight {
+      background: linear-gradient(135deg, var(--forest), var(--leaf));
+      border-color: transparent;
+    }
+    .res-tile.highlight .res-tile-label { color: rgba(255,255,255,0.65); }
+    .res-tile.highlight .res-tile-value { color: #fff; font-size: 30px; }
+    .res-tile.highlight .res-tile-sub { color: rgba(255,255,255,0.6); }
+    .result-paper {
+      background: #fffdf7;
+      border: 1px solid rgba(26,58,10,0.12);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 24px 70px rgba(26,58,10,0.12);
+    }
+    .result-paper-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 18px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid rgba(26,58,10,0.1);
+    }
+    .result-paper-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--forest);
+    }
+    .result-paper-sub {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+    .result-stamp {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--pale);
+      color: var(--leaf);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    /* ── Animations ── */
+        /* Compact sample-form format */
+    .predict-hero { height: 220px; margin-top: 98px; }
+    .predict-hero-content { padding: 0 6% 32px; }
+    .predict-hero-eyebrow { border-radius: 6px; padding: 4px 10px; margin-bottom: 10px; }
+    .predict-hero-title { font-size: clamp(30px, 4vw, 44px); margin-bottom: 6px; }
+    .predict-hero-sub { font-size: 14px; }
+    .predict-page { max-width: 1120px; padding: 28px 4% 70px; }
+    .predict-workspace { grid-template-columns: 250px minmax(0, 1fr); gap: 18px; margin-top: 0; }
+    .predict-side-guide { top: 118px; border-radius: 8px; padding: 16px; box-shadow: none; }
+    .side-guide-title { font-size: 20px; }
+    .side-guide-copy { font-size: 12px; line-height: 1.55; margin-bottom: 12px; }
+    .side-guide-list { gap: 7px; }
+    .side-guide-item { grid-template-columns: 24px 1fr; padding: 9px; border-radius: 6px; }
+    .side-guide-num { width: 24px; height: 24px; font-size: 11px; }
+    .predict-form { background: transparent; border: 0; border-radius: 0; padding: 0; }
+    .predict-section {
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 18px;
+      padding: 18px;
+      margin-bottom: 12px;
+      background: #fff;
+      border: 1px solid rgba(26,58,10,0.12);
+      border-radius: 8px;
+    }
+    .predict-section:last-of-type { border-bottom: 1px solid rgba(26,58,10,0.12); }
+    .ps-num { font-size: 26px; margin-bottom: 6px; color: rgba(26,58,10,0.22); letter-spacing: 0; }
+    .ps-title { font-size: 17px; margin-bottom: 5px; }
+    .ps-desc { font-size: 12px; line-height: 1.5; }
+    .ps-badge { border-radius: 5px; margin-top: 9px; }
+    .loc-detect-card, .sub-crop-panel, .water-info-card, .result-paper, .res-tile { border-radius: 8px; box-shadow: none; }
+    .loc-detect-top { padding: 12px 14px; }
+    .loc-icon-circle { width: 36px; height: 36px; border-radius: 8px; font-size: 16px; box-shadow: none; }
+    .loc-status-bar { padding: 9px 14px; }
+    .detect-btn, .field select, .field input[type="number"], .unit-grp, .unit-grp button, .predict-cta-btn { border-radius: 6px; }
+    .loc-type-grid, .crop-row, .other-loc-grid { gap: 10px; }
+    .loc-type-card { border-width: 1px; border-radius: 7px; display: flex; min-height: 74px; }
+    .loc-type-img { display: none; }
+    .loc-type-body { padding: 12px; }
+    .sub-crop-panel { padding: 12px; margin-bottom: 14px; }
+    .sub-crop-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+    .sub-crop-card { display: grid; grid-template-columns: 58px 1fr; border-width: 1px; border-radius: 7px; }
+    .sc-img { height: 100%; min-height: 62px; }
+    .sc-body { padding: 9px 10px; }
+    .water-info-card { padding: 11px 12px; margin-bottom: 12px; }
+    .water-info-icon { display: none; }
+    .water-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+    .wc {
+      min-height: 44px;
+      flex-direction: row;
+      justify-content: flex-start;
+      padding: 10px 12px;
+      gap: 10px;
+      border-width: 1px;
+      border-radius: 6px;
+      text-align: left;
+    }
+    .wc-icon { min-width: 42px; font-size: 11px; font-weight: 800; color: var(--leaf); letter-spacing: .04em; }
+    .wc .dot { margin-left: auto; margin-top: 0; }
+    .wc:hover { transform: none; box-shadow: none; }
+    .wtag { border-radius: 5px; }
+    .ps-body > div[style*="margin-top: 28px"] { margin-top: 14px !important; padding-top: 12px !important; }
+    .ps-body div[style*="minmax(280px"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+    .ps-body div[style*="border-left:4px"] { padding: 10px !important; border-radius: 6px !important; }
+    .predict-cta-wrap { padding: 4px 0 0; }
+    .predict-cta-inner {
+      border-radius: 8px;
+      padding: 18px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .predict-cta-inner::after { display: none; }
+    .predict-cta-title { font-size: 22px; margin-bottom: 4px; }
+    .predict-cta-sub { font-size: 12px; margin-bottom: 0; }
+    .predict-cta-btn { padding: 13px 24px; font-size: 14px; white-space: nowrap; }
+    .results-area { margin-top: 18px; }
+    .results-heading { font-size: 22px; margin-bottom: 12px; padding-bottom: 10px; }
+    .result-paper { padding: 16px; }
+    .result-paper-head { padding-bottom: 12px; margin-bottom: 12px; }
+    .result-paper-title { font-size: 22px; }
+    .res-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 9px; }
+    .res-tile { padding: 14px; }
+    .res-tile-value { font-size: 18px; }
+    .res-tile.highlight .res-tile-value { font-size: 24px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+
+    /* ── Chat widget ── */
+    .chat-btn { position: fixed; bottom: 28px; right: 28px; width: 56px; height: 56px; border-radius: 50%; background: var(--forest); color: #fff; border: none; font-size: 22px; cursor: pointer; box-shadow: 0 8px 24px rgba(26,58,10,0.28); z-index: 600; transition: all .2s; }
+    .chat-btn:hover { background: var(--leaf); transform: scale(1.08); }
+    .chat-widget { position: fixed; bottom: 94px; right: 28px; width: 340px; background: #fff; border-radius: 20px; box-shadow: 0 16px 64px rgba(26,58,10,0.18); z-index: 600; display: none; flex-direction: column; overflow: hidden; border: 1px solid rgba(26,58,10,0.1); }
+    .chat-widget.open { display: flex; }
+    .chat-header { background: var(--forest); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .chat-title { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #fff; font-size: 14px; }
+    .chat-title-icon { font-size: 20px; }
+    .chat-close { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 20px; cursor: pointer; line-height: 1; }
+    .chat-body { padding: 16px; height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .chat-msg { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.55; max-width: 88%; }
+    .chat-msg.ai { background: var(--pale); color: var(--ink); align-self: flex-start; border-radius: 4px 12px 12px 12px; }
+    .chat-msg.user { background: var(--forest); color: #fff; align-self: flex-end; border-radius: 12px 4px 12px 12px; }
+    .chat-footer { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid rgba(26,58,10,0.08); }
+    .chat-mic-btn { background: var(--pale); border: none; border-radius: 8px; padding: 8px; font-size: 16px; cursor: pointer; }
+    .chat-input { flex: 1; border: 1.5px solid rgba(26,58,10,0.14); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; }
+    .chat-input:focus { border-color: var(--forest); }
+    .chat-send-btn { background: var(--forest); color: #fff; border: none; border-radius: 8px; padding: 9px 12px; font-size: 14px; cursor: pointer; transition: background .2s; }
+    .chat-send-btn:hover { background: var(--leaf); }
+
+    /* ── Responsive ── */
+    @media (max-width: 820px) {
+      .predict-section { grid-template-columns: 1fr; gap: 20px; padding: 38px 0; }
+      .ps-num { font-size: 40px; }
+      .crop-row { grid-template-columns: 1fr; }
+      .loc-type-grid { grid-template-columns: 1fr; }
+      .other-loc-grid { grid-template-columns: 1fr; }
+      .predict-cta-inner::after { display: none; }
+      .res-grid { grid-template-columns: repeat(2, 1fr); }
+      .predict-workspace { grid-template-columns: 1fr; }
+      .predict-side-guide { position: static; }
+      .predict-form { padding: 0 18px 24px; }
+    }
+  </style>
+</head>
+<body data-page="predict">
+
+  <button class="sidebar-toggle sidebar-toggle-out" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
+    <span></span>
+  </button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-toggle sidebar-toggle-in" type="button" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true">
+      <span></span>
+    </button>
+    <h2 style="display:none;">Yeildpredicto</h2>
+    <div class="sidebar-logo">
+      <img src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto Logo"/>
+      <span class="logo-text">Yeild<span class="predict">predicto</span></span>
+    </div>
+    <a href="{{ url_for('index') }}">🏠 Home</a>
+    <a href="{{ url_for('predict') }}">🌾 Prediction</a>
+    <a href="{{ url_for('how') }}">⚙️ How Yeildpredicto Works</a>
+    <a href="{{ url_for('calendar') }}">📅 Crop Calendar</a>
+    <a href="{{ url_for('tips') }}">💡 Tips &amp; Insights</a>
+  </div>
+
+  <!-- ========== NAV ========== -->
+  <nav id="mainNav">
+    <a class="nav-brand" href="{{ url_for('index') }}">
+      <img class="nav-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="Yeildpredicto"/>
+      <span class="nav-brand-name">Yeild<span>predicto</span></span>
+    </a>
+    <div class="nav-right">
+      <select id="languageSwitcher" class="nav-lang">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="te">తెలుగు</option>
+        <option value="ta">தமிழ்</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="ml">മലയാളം</option>
+        <option value="mr">मराठी</option>
+        <option value="gu">ગુજરાતી</option>
+        <option value="pa">ਪੰਜਾਬੀ</option>
+        <option value="bn">বাংলা</option>
+        <option value="or">ଓଡ଼ିଆ</option>
+        <option value="as">অসমীয়া</option>
+        <option value="ur">اردو</option>
+        <option value="sa">संस्कृत</option>
+        <option value="kok">कोंकणी</option>
+        <option value="mni">Manipuri</option>
+        <option value="brx">Bodo</option>
+        <option value="doi">Dogri</option>
+        <option value="mai">Maithili</option>
+        <option value="sat">Santali</option>
+        <option value="ks">Kashmiri</option>
+        <option value="sd">Sindhi</option>
+        <option value="ne">Nepali</option>
+      </select>
+      <div class="nav-loc-pill" id="navLoc">📍 Detecting...</div>
+    </div>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <div class="predict-hero">
+    <img class="predict-hero-img"
+      src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80"
+      alt="Farm field"/>
+    <div class="predict-hero-overlay"></div>
+    <div class="predict-hero-content">
+      <div class="predict-hero-eyebrow">🌾 Yield Predictor</div>
+      <h1 class="predict-hero-title" data-lang="predict_title">Crop Yield Predictor</h1>
+      <p class="predict-hero-sub" data-lang="predict_lead">GPS auto-detects your location &nbsp;•&nbsp; Smart AI-powered predictions in seconds</p>
+    </div>
+  </div>
+
+  <!-- ========== MAIN FORM PAGE ========== -->
+  <div class="predict-page" id="predict">
+
+        <div class="predict-workspace">
+      <aside class="predict-side-guide">
+        <div class="side-guide-kicker">Field guide</div>
+        <div class="side-guide-title">How to find the right inputs</div>
+        <p class="side-guide-copy">Use nearby, real farm information. The more local your details are, the better Yeildpredicto can shape the prediction.</p>
+        <div class="side-guide-list">
+          <div class="side-guide-item">
+            <div class="side-guide-num">1</div>
+            <div><strong>Location</strong><span>Detect GPS, or choose the state and district where the land is actually located.</span></div>
+          </div>
+          <div class="side-guide-item">
+            <div class="side-guide-num">2</div>
+            <div><strong>Crop</strong><span>Pick a category first, then select the exact crop variety card shown below it.</span></div>
+          </div>
+          <div class="side-guide-item">
+            <div class="side-guide-num">3</div>
+            <div><strong>Area</strong><span>Enter only cultivated land area, not total property size.</span></div>
+          </div>
+          <div class="side-guide-item">
+            <div class="side-guide-num">4</div>
+            <div><strong>Water</strong><span>Select every nearby water source: rainwater, well, borewell, canal, river, pond, tank, or drip system.</span></div>
+          </div>
+        </div>
+      </aside>
+      <div class="predict-form">
+<!-- ── 01: LOCATION ── -->
+    <div class="predict-section">
+      <div class="ps-label">
+        <span class="ps-num">01</span>
+        <div class="ps-title" data-lang="loc_title">Your Location</div>
+        <p class="ps-desc" data-lang="loc_desc">GPS auto-fetches real-time soil &amp; climate data for your exact coordinates.</p>
+        <span class="ps-badge">📡 GPS Enabled</span>
+      </div>
+      <div class="ps-body">
+
+        <!-- Detect card -->
+        <div class="loc-detect-card">
+          <div class="loc-detect-top">
+            <div class="loc-detect-left">
+              <div class="loc-icon-circle">📍</div>
+              <div>
+                <div class="loc-detect-title" data-lang="loc_title">Your Location</div>
+                <div class="loc-detect-sub" data-lang="loc_desc">GPS auto-fetches soil &amp; climate data</div>
+              </div>
+            </div>
+            <button class="detect-btn" id="detectBtn" onclick="detectLoc()" data-lang="detect_btn">
+              ⊙ Detect My Location
+            </button>
+          </div>
+          <div class="loc-status-bar" id="locBottom">
+            <span style="font-size:13px;color:var(--ghost);" data-lang="loc_hint_click_detect">Click "Detect" to auto-fill location data</span>
+          </div>
+        </div>
+
+        <div id="weatherContainer"></div>
+
+        <!-- Where to predict -->
+        <div style="margin: 20px 0 12px; font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.06em; text-transform:uppercase;">
+          <span data-lang="yo_question">Where do you want yield prediction?</span>
+        </div>
+        <div class="loc-type-grid">
+          <div class="loc-type-card active" id="yo-curr" onclick="setYO('curr')">
+            <img class="loc-type-img"
+              src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&q=70"
+              alt="current location" onerror="this.style.display='none'"/>
+            <div class="loc-type-body">
+              <div class="loc-type-title" data-lang="yo_curr_title">📍 My Current Location</div>
+              <div class="loc-type-desc" data-lang="yo_curr_desc">Predict yield for your detected location</div>
+            </div>
+          </div>
+          <div class="loc-type-card" id="yo-other" onclick="setYO('other')">
+            <img class="loc-type-img"
+              src="https://images.unsplash.com/photo-1574923327983-b52d4e39e7f6?w=400&q=70"
+              alt="map" onerror="this.style.display='none'"/>
+            <div class="loc-type-body">
+              <div class="loc-type-title" data-lang="yo_other_title">🗺️ Different Location</div>
+              <div class="loc-type-desc" data-lang="yo_other_desc">Compare yield anywhere in India</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="otherLocFields" style="display:none;">
+          <div class="other-loc-grid">
+            <div class="field">
+              <label data-lang="state_label">State</label>
+              <select id="oState" onchange="loadDist()">
+                <option value="" data-lang="state_select_placeholder">Select state</option>
+                <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+                <option>Gujarat</option><option>Haryana</option><option>Karnataka</option>
+                <option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option>
+                <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+                <option>Tamil Nadu</option><option>Telangana</option>
+                <option>Uttar Pradesh</option><option>West Bengal</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-lang="district_label">District</label>
+              <select id="oDist"><option value="" data-lang="district_select_first">Select state first</option></select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 02: CROP DETAILS ── -->
+    <div class="predict-section">
+      <div class="ps-label">
+        <span class="ps-num">02</span>
+        <div class="ps-title">Crop Details</div>
+        <p class="ps-desc">Choose your crop category, pick a specific variety, set your growing season and land area.</p>
+        <span class="ps-badge">🌿 Smart Suggestions</span>
+      </div>
+      <div class="ps-body">
+
+        <div class="crop-row">
+          <div class="field">
+            <label data-lang="crop_category_label">Crop Category</label>
+            <select id="cropType" onchange="onCropTypeChange()">
+              <option value="suggest" data-lang="crop_cat_suggest">🤖 Suggest best crop for me</option>
+              <option value="veg" data-lang="crop_cat_veg">🥦 Vegetables</option>
+              <option value="fruits" data-lang="crop_cat_fruits">🍎 Fruits</option>
+              <option value="rice" data-lang="crop_cat_cereals">🌾 Cereals &amp; Grains</option>
+              <option value="pulses" data-lang="crop_cat_pulses">🫘 Pulses</option>
+              <option value="cash" data-lang="crop_cat_cash">🌿 Cash Crops</option>
+              <option value="oil" data-lang="crop_cat_oil">🌻 Oilseeds</option>
+              <option value="spices" data-lang="crop_cat_spices">🌶️ Spices</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-lang="season_label">Season</label>
+            <select id="season">
+              <option value="" data-lang="season_placeholder">Select season</option>
+              <option>Kharif (Jun–Oct)</option>
+              <option>Rabi (Nov–Apr)</option>
+              <option>Zaid (Mar–Jun)</option>
+              <option>Whole Year</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sub-crop visual picker -->
+        <div class="sub-crop-panel" id="subCropWrap" style="display:none;">
+          <div class="sub-crop-panel-title">
+            <span style="color:var(--gold);font-size:16px;">↳</span>
+            <span data-lang="subcrop_select_title">Select Specific Crop</span>
+            <span class="scp-hint" data-lang="subcrop_select_hint">Pick a variety for detailed yield &amp; alternatives</span>
+          </div>
+          <div class="sub-crop-grid" id="subCropGrid"></div>
+          <div class="sub-crop-info" id="subCropInfo" style="display:none;"></div>
+          <select id="subCropType" style="display:none;">
+            <option value="">-- select specific crop --</option>
+          </select>
+        </div>
+
+        <!-- Area size -->
+        <div class="field">
+          <label data-lang="area_size_label">Area Size</label>
+          <div class="area-row">
+            <div class="field" style="margin-bottom:0;">
+              <input type="number" id="areaSize" placeholder="e.g. 5" min="0" step="0.1"/>
+            </div>
+            <div class="unit-grp">
+              <button class="active" onclick="setUnit(this)" data-lang="unit_acres">Acres</button>
+              <button onclick="setUnit(this)" data-lang="unit_hectares">Hectares</button>
+              <button onclick="setUnit(this)" data-lang="unit_sqm">Sq.m</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 03: WATER RESOURCES ── -->
+    <div class="predict-section">
+      <div class="ps-label">
+        <span class="ps-num">03</span>
+        <div class="ps-title" data-lang="water_title">Water Resources</div>
+        <p class="ps-desc">Select every water source available on your farm. This helps us recommend the best-suited crops for your irrigation setup.</p>
+        <span class="ps-badge">💧 Multi-Select</span>
+      </div>
+      <div class="ps-body">
+        <!-- Water Resources Information Card -->
+        <div class="water-info-card">
+          <div class="water-info-icon">💧</div>
+          <div class="water-info-text">
+            <strong>Why Water Matters:</strong> The water sources available on your farm directly impact which crops you can grow and their expected yield. Including all available sources ensures recommendations match your irrigation capabilities.
+          </div>
+        </div>
+
+        <div class="water-header-row">
+          <span class="water-label">Available Sources</span>
+          <span class="multi-badge" data-lang="multi_select">multi-select</span>
+        </div>
+        <div class="water-grid" id="wGrid">
+          <!-- Water sources will be populated here by JavaScript -->
+        </div>
+        <div class="wtags" id="wTags"></div>
+        <div class="warn-bar" id="wWarn" style="display:none;">
+          <span data-lang="warn_no_water">⚠️ No water source — only drought-resistant crops will be recommended.</span>
+        </div>
+
+        <!-- Water Resource Details Section -->
+        <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(26,58,10,0.08);">
+          <div style="font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:16px;">Water Source Guide</div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+            <!-- Rainfall -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">🌧️ Rainfall</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Relies on natural monsoon and seasonal precipitation. Best for kharif crops (June-Oct) and supplementary for rabi crops.</div>
+            </div>
+            <!-- Well/Borewell -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">🚰 Well/Borewell</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Underground groundwater accessed via wells. Provides year-round irrigation potential, ideal for year-round or rabi crops.</div>
+            </div>
+            <!-- Canals/Channels -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">🌊 Canals/Channels</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Irrigation water from government canals or water channels. Availability often seasonal; check with local irrigation department.</div>
+            </div>
+            <!-- Ponds/Tanks -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">🏞️ Ponds/Tanks</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Stored surface water from farm ponds or community tanks. Great for dry season crops but dependent on water accumulation.</div>
+            </div>
+            <!-- River/Stream -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">🏞️ River/Stream</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Proximity to flowing water sources enables direct irrigation. Best during monsoon and winter seasons.</div>
+            </div>
+            <!-- Drip Irrigation -->
+            <div style="background:var(--pale); border-radius:12px; padding:16px; border-left:4px solid #1a3a0a;">
+              <div style="font-size:14px; font-weight:700; color:var(--forest); margin-bottom:6px;">💧 Drip/Micro System</div>
+              <div style="font-size:12px; color:var(--ghost); line-height:1.6;">Efficient irrigation systems using 30-50% less water. Ideal for high-value crops with precise water needs.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PREDICT CTA ── -->
+    <div class="predict-cta-wrap">
+      <div class="predict-cta-inner">
+        <div class="predict-cta-title">Ready to Predict Your Yield?</div>
+        <div class="predict-cta-sub">Our AI analyses 12+ parameters — soil type, climate, rainfall, water, and more — to give you an accurate yield forecast.</div>
+        <button class="predict-cta-btn" onclick="runPrediction()">
+          🌾 &nbsp;Predict Now
+        </button>
+      </div>
+    </div>
+
+    <!-- ── RESULTS ── -->
+    <div class="results-area" id="resArea">
+      <div class="results-heading">🌾 Prediction Results</div>
+      <div id="resContent"></div>
+    </div>
+
+
+      </div><!-- /predict-form -->
+    </div><!-- /predict-workspace -->
+  </div><!-- /predict-page -->
+
+  <!-- ========== SCRIPTS ========== -->
+  <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <script>
+    // Active sidebar link
+    (function () {
+      const current = (location.pathname.split('/').pop() || 'predict.html').toLowerCase();
+      document.querySelectorAll('.sidebar a').forEach(a => {
+        if ((a.getAttribute('href') || '').toLowerCase() === current) a.classList.add('active');
+      });
+    })();
+
+    // Sidebar toggle
+    (function () {
+      const body    = document.body;
+      const btnOut  = document.querySelector('.sidebar-toggle-out');
+      const btnIn   = document.querySelector('.sidebar-toggle-in');
+      const overlay = document.getElementById('sidebarOverlay');
+      const KEY = 'yeildpredicto_sidebar_open';
+      if (!btnOut || !btnIn) return;
+      const setOpen = (open) => {
+        body.classList.toggle('sidebar-open', open);
+        btnOut.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btnIn.setAttribute('aria-expanded',  open ? 'true' : 'false');
+        sessionStorage.setItem(KEY, open ? '1' : '0');
+      };
+      setOpen(sessionStorage.getItem(KEY) === '1');
+      btnOut.addEventListener('click',  () => setOpen(!body.classList.contains('sidebar-open')));
+      btnIn.addEventListener('click',   () => setOpen(!body.classList.contains('sidebar-open')));
+      overlay?.addEventListener('click', () => setOpen(false));
+      document.querySelectorAll('.sidebar a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+      window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+    })();
+
+    // Chat widget
+    document.addEventListener('DOMContentLoaded', () => {
+      const chatBtn    = document.getElementById('chatBtn');
+      const chatWidget = document.getElementById('chatWidget');
+      const chatClose  = document.getElementById('chatClose');
+      const chatSend   = document.getElementById('chatSendBtn');
+      const chatInput  = document.getElementById('chatInput');
+      const chatBody   = document.getElementById('chatBody');
+      if (chatBtn)   chatBtn.addEventListener('click',  () => chatWidget.classList.toggle('open'));
+      if (chatClose) chatClose.addEventListener('click', () => chatWidget.classList.remove('open'));
+      function appendMsg(text, who) {
+        const m = document.createElement('div');
+        m.className = 'chat-msg ' + who;
+        m.textContent = text;
+        chatBody.appendChild(m);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+      if (chatSend) chatSend.addEventListener('click', () => {
+        const txt = chatInput.value.trim();
+        if (!txt) return;
+        appendMsg(txt, 'user');
+        chatInput.value = '';
+        setTimeout(() => appendMsg("Thanks for your message! I'm here to help with crop predictions.", 'ai'), 650);
+      });
+      if (chatInput) chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') chatSend.click(); });
+    });
+  </script>
+
+  <!-- ========== AI CHAT ========== -->
+  <button class="chat-btn" id="chatBtn" title="Yeildpredicto AI Assistant">💬</button>
+  <div class="chat-widget" id="chatWidget">
+    <div class="chat-header">
+      <div class="chat-title"><div class="chat-title-icon">🤖</div> Yeildpredicto AI</div>
+      <button class="chat-close" id="chatClose">&times;</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-msg ai">Hello! I'm your Predicto AI Assistant. How can I help you today? You can type or use the microphone to speak.</div>
+    </div>
+    <div class="chat-footer">
+      <button class="chat-mic-btn" id="chatMicBtn" title="Use Microphone">🎤</button>
+      <input type="text" class="chat-input" id="chatInput" placeholder="Type your question..."/>
+      <button class="chat-send-btn" id="chatSendBtn">➤</button>
+    </div>
+  </div>
+
+</body>
+</html>

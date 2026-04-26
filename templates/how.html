@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>YeildPredicto — How It Works</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/Main Logo.jpeg') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <style>
+    /* ── SIDEBAR ── */
+    body { padding-left: 0; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 25vw; max-width: 320px; z-index: 800;
+      background: rgba(253,246,227,0.96); border-right: 1px solid rgba(26,58,10,0.10);
+      padding: 18px 14px; backdrop-filter: blur(14px); overflow: auto;
+      transform: translateX(-110%); transition: transform .22s ease;
+    }
+    .sidebar h2 { margin: 4px 8px 14px; font-family: 'Playfair Display', serif; color: #1a3a0a; font-size: 26px; }
+    .sidebar a {
+      display: block; padding: 16px 18px; margin: 6px 4px; border-radius: 12px;
+      text-decoration: none; color: #4a5e3a; font-weight: 600; font-size: 18px;
+      border: 1px solid rgba(26,58,10,0.08); background: rgba(255,255,255,0.65);
+    }
+    .sidebar a:hover { border-color: rgba(26,58,10,0.18); color: #1a3a0a; }
+    .sidebar a.active { background: var(--forest); color: #fff; border-color: rgba(26,58,10,0.25); box-shadow: 0 10px 28px rgba(26,58,10,0.14); }
+    .sidebar-toggle {
+      position: fixed; top: 14px; left: 14px; width: 44px; height: 44px;
+      border-radius: 12px; border: 1px solid rgba(26,58,10,0.14);
+      background: rgba(255,255,255,0.85); z-index: 850;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; backdrop-filter: blur(14px);
+    }
+    .sidebar-toggle-in { position: sticky; top: 14px; left: 0; margin: 0 0 10px 4px; display: none; }
+    body.sidebar-open .sidebar-toggle-out { opacity: 0; pointer-events: none; }
+    body.sidebar-open .sidebar-toggle-in  { display: flex; }
+    .sidebar-toggle span { display: block; width: 18px; height: 2px; background: var(--forest); border-radius: 2px; position: relative; }
+    .sidebar-toggle span::before,
+    .sidebar-toggle span::after { content: ''; position: absolute; left: 0; width: 18px; height: 2px; background: var(--forest); border-radius: 2px; }
+    .sidebar-toggle span::before { top: -6px; }
+    .sidebar-toggle span::after  { top: 6px; }
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.18); z-index: 790; opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+    body.sidebar-open { padding-left: 25vw; }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+    /* Sidebar logo styles */
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      margin: 4px 8px 14px;
+      font-family: 'Playfair Display', serif;
+      color: #1a3a0a;
+      font-size: 26px;
+      font-weight: bold;
+    }
+    .sidebar-logo img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+    }
+    .sidebar-logo .logo-text {
+      margin-left: 10px;
+    }
+    .sidebar-logo .predict {
+      color: rgb(155, 140, 56);
+    }
+    /* Hide text when sidebar is collapsed */
+    .sidebar .logo-text {
+      display: none;
+    }
+    body.sidebar-open .sidebar .logo-text {
+      display: inline;
+    }
+    @media (max-width: 680px) { body.sidebar-open { padding-left: 0; } }
+
+    /* ══ PAGE HERO ══ */
+    .how-hero {
+      background: linear-gradient(160deg, var(--forest) 0%, #2d5a1b 55%, #1a4a0f 100%);
+      padding: 120px 6% 80px; position: relative; overflow: hidden;
+    }
+    .how-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    .how-hero-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; align-items: center;
+      position: relative; z-index: 2;
+    }
+    .how-hero-text .eyebrow { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+    .how-hero-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 58px); font-weight: 800; color: #fff;
+      line-height: 1.1; margin: 16px 0 20px;
+    }
+    .how-hero-text h1 em { color: var(--amber); font-style: italic; }
+    .how-hero-text p { font-size: 16px; color: rgba(255,255,255,0.72); line-height: 1.8; max-width: 480px; margin-bottom: 32px; }
+    .how-hero-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+    .how-pill {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 16px; background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18); border-radius: 24px;
+      font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 500;
+    }
+    .how-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+    .how-hero-visual { display: flex; flex-direction: column; gap: 12px; }
+    .hw-card {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px; padding: 14px 18px;
+      backdrop-filter: blur(10px); display: flex; align-items: center; gap: 14px;
+      animation: fadeUp .6s ease both;
+    }
+    .hw-card:nth-child(1) { animation-delay:.1s; }
+    .hw-card:nth-child(2) { animation-delay:.25s; }
+    .hw-card:nth-child(3) { animation-delay:.4s; }
+    .hw-card:nth-child(4) { animation-delay:.55s; }
+    .hw-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+    .hw-c1 { background: rgba(90,158,58,0.25); }
+    .hw-c2 { background: rgba(200,134,10,0.25); }
+    .hw-c3 { background: rgba(45,106,31,0.25); }
+    .hw-c4 { background: rgba(255,255,255,0.12); }
+    .hw-card-label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; margin-bottom: 2px; letter-spacing:.04em; text-transform:uppercase; }
+    .hw-card-val   { font-size: 13px; color: #fff; font-weight: 600; }
+    .hw-card-badge { margin-left: auto; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; flex-shrink: 0; }
+
+    /* ══ DATA SOURCES STRIP ══ */
+    .data-strip { background: var(--forest); padding: 36px 6%; border-top: 1px solid rgba(255,255,255,0.06); }
+    .data-strip-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 32px; flex-wrap: wrap; justify-content: space-between; }
+    .data-strip-label { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.7); white-space: nowrap; }
+    .data-strip-items { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; }
+    .ds-item { display: flex; align-items: center; gap: 7px; padding: 7px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.13); border-radius: 22px; font-size: 12px; color: rgba(255,255,255,0.78); font-weight: 500; }
+
+    /* ══ STEPS ══ */
+    .how-steps { background: var(--parchment); padding: 90px 6%; }
+    .how-steps-inner { max-width: 1280px; margin: 0 auto; }
+    .how-step-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+      padding: 64px 0; border-bottom: 1px solid rgba(26,58,10,0.07);
+    }
+    .how-step-row:first-child { padding-top: 0; }
+    .how-step-row:last-child  { border-bottom: none; padding-bottom: 0; }
+    .how-step-row.rev .step-text   { order: 2; }
+    .how-step-row.rev .step-visual { order: 1; }
+
+    .step-num-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .step-num {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: var(--forest); color: #fff;
+      font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 8px 24px rgba(26,58,10,0.22);
+    }
+    .step-tag { padding: 4px 14px; background: var(--pale); border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--leaf); letter-spacing:.07em; text-transform:uppercase; border: 1px solid rgba(26,58,10,0.1); }
+    .step-text h2 { font-family: 'Playfair Display', serif; font-size: clamp(22px,3vw,31px); font-weight: 800; color: var(--forest); margin-bottom: 14px; line-height: 1.2; }
+    .step-text > p { font-size: 15px; color: var(--muted); line-height: 1.8; margin-bottom: 24px; }
+
+    .step-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+    .step-chip { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--white); border-radius: var(--r); border: 1px solid rgba(26,58,10,0.08); }
+    .sc-ico  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .sc-body { font-size: 12px; color: var(--muted); line-height: 1.55; }
+    .sc-body strong { display: block; color: var(--forest); font-size: 13px; margin-bottom: 2px; }
+
+    .step-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 26px; border-radius: var(--r);
+      font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+      transition: all .2s; border: none;
+    }
+    .step-btn-dark { background: var(--forest); color: #fff; }
+    .step-btn-dark:hover { background: var(--leaf); transform: translateY(-1px); }
+    .step-btn-amber { background: var(--amber); color: #fff; }
+    .step-btn-amber:hover { background: var(--gold); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,134,10,0.3); }
+
+    /* Step visual */
+    .step-visual { position: relative; }
+    .step-img-wrap { border-radius: var(--r-xl); overflow: hidden; box-shadow: 0 28px 72px rgba(26,58,10,0.16); position: relative; }
+    .step-img-wrap img { width: 100%; height: 380px; object-fit: cover; display: block; }
+    .step-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,30,5,0.45) 0%, transparent 55%); }
+
+    .float-badge {
+      position: absolute; bottom: -18px; right: -18px;
+      background: var(--white); border-radius: var(--r-lg);
+      padding: 15px 18px; box-shadow: 0 10px 32px rgba(0,0,0,0.13);
+      border: 1px solid rgba(26,58,10,0.08); min-width: 175px;
+    }
+    .fb-lbl  { font-size: 11px; color: var(--ghost); font-weight: 500; margin-bottom: 5px; text-transform: uppercase; letter-spacing:.06em; }
+    .fb-val  { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 800; color: var(--forest); }
+    .fb-sub  { font-size: 11px; color: var(--ghost); margin-top: 3px; }
+    .fb-bar  { height: 4px; background: rgba(26,58,10,0.1); border-radius: 2px; margin-top: 9px; overflow: hidden; }
+    .fb-fill { height: 100%; background: linear-gradient(to right, var(--leaf), var(--lime)); border-radius: 2px; }
+
+    .float-badge-2 {
+      position: absolute; top: -14px; left: -14px;
+      background: var(--forest); border-radius: var(--r);
+      padding: 9px 15px; box-shadow: 0 8px 24px rgba(26,58,10,0.28);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .fb2-icon { font-size: 18px; }
+    .fb2-lbl  { font-size: 11px; color: rgba(255,255,255,0.65); font-weight: 500; }
+    .fb2-val  { font-size: 14px; color: #fff; font-weight: 700; }
+
+    /* ══ TECH CARDS ══ */
+    .tech-section { background: var(--sand); padding: 80px 6%; }
+    .tech-inner   { max-width: 1280px; margin: 0 auto; }
+    .tech-grid    { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-top: 44px; }
+    .tech-card {
+      background: var(--white); border-radius: var(--r-lg); padding: 28px 22px;
+      border: 1px solid rgba(26,58,10,0.08); text-align: center;
+      transition: all .3s; position: relative; overflow: hidden;
+    }
+    .tech-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(to right, var(--amber), var(--gold));
+      transform: scaleX(0); transition: transform .3s; transform-origin: left;
+    }
+    .tech-card:hover::after { transform: scaleX(1); }
+    .tech-card:hover { box-shadow: 0 14px 40px rgba(26,58,10,0.11); transform: translateY(-4px); }
+    .tech-icon { font-size: 32px; margin-bottom: 13px; }
+    .tech-card h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--forest); margin-bottom: 8px; }
+    .tech-card p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ══ ACCURACY ══ */
+    .acc-section { background: var(--parchment); padding: 80px 6%; }
+    .acc-inner   { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .acc-text h2 { font-family: 'Playfair Display', serif; font-size: clamp(26px,3.5vw,38px); font-weight: 800; color: var(--forest); margin-bottom: 16px; line-height: 1.2; }
+    .acc-text p  { font-size: 15px; color: var(--muted); line-height: 1.8; margin-bottom: 28px; }
+    .acc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .acc-metric  { background: var(--white); border-radius: var(--r); padding: 18px; border: 1px solid rgba(26,58,10,0.08); border-left: 4px solid var(--leaf); }
+    .acc-num     { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800; color: var(--forest); }
+    .acc-lbl     { font-size: 12px; color: var(--ghost); margin-top: 4px; line-height: 1.5; }
+    .acc-visual  { position: relative; }
+    .acc-img     { width: 100%; height: 420px; object-fit: cover; border-radius: var(--r-xl); box-shadow: 0 24px 64px rgba(26,58,10,0.15); }
+    .acc-overlay {
+      position: absolute; bottom: -18px; left: -18px;
+      background: var(--forest); border-radius: var(--r-lg); padding: 18px 22px;
+      box-shadow: 0 12px 36px rgba(26,58,10,0.28); min-width: 195px;
+    }
+    .acc-ov-lbl  { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 10px; text-transform: uppercase; letter-spacing:.06em; }
+    .acc-crop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .acc-crop-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .acc-crop-pct  { font-size: 12px; color: var(--amber); font-weight: 700; }
+    .acc-crop-bar  { height: 3px; background: rgba(255,255,255,0.12); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+    .acc-crop-fill { height: 100%; background: var(--amber); border-radius: 2px; }
+
+    /* ══ BOTTOM CTA ══ */
+    .how-cta { background: var(--ink); padding: 80px 6%; text-align: center; }
+    .how-cta-inner { max-width: 660px; margin: 0 auto; }
+    .how-cta h2  { font-family: 'Playfair Display', serif; font-size: clamp(28px,4vw,44px); font-weight: 800; color: #fff; margin-bottom: 16px; line-height: 1.2; }
+    .how-cta p   { font-size: 16px; color: rgba(255,255,255,0.58); line-height: 1.8; margin-bottom: 36px; }
+    .how-cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .cta-btn-main {
+      padding: 15px 38px; background: var(--amber); color: #fff;
+      border: none; border-radius: var(--r); font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .cta-btn-main:hover { background: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(200,134,10,0.35); }
+    .cta-btn-ghost {
+      padding: 15px 38px; background: transparent; color: rgba(255,255,255,0.75);
+      border: 1.5px solid rgba(255,255,255,0.22); border-radius: var(--r);
+      font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .cta-btn-ghost:hover { border-color: rgba(255,255,255,0.55); color: #fff; }
+
+    /* ══ RESPONSIVE ══ */
+    @media (max-width: 1024px) {
+      .how-hero-inner { grid-template-columns: 1fr; }
+      .how-hero-visual { display: none; }
+      .how-step-row { grid-template-columns: 1fr; gap: 36px; }
+      .how-step-row.rev .step-text   { order: 1; }
+      .how-step-row.rev .step-visual { order: 2; }
+      .tech-grid { grid-template-columns: 1fr 1fr; }
+      .acc-inner { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .how-hero { padding: 100px 6% 56px; }
+      .step-img-wrap img { height: 230px; }
+      .float-badge, .float-badge-2 { display: none; }
+      .step-chips { grid-template-columns: 1fr; }
+      .tech-grid  { grid-template-columns: 1fr 1fr; }
+      .acc-metrics { grid-template-columns: 1fr 1fr; }
+      .acc-img    { height: 250px; }
+      .acc-overlay { display: none; }
+      .data-strip-items { gap: 7px; }
+    }
+  </style>
+</head>
+<body data-page="how">
+
+  <button class="sidebar-toggle sidebar-toggle-out" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
+    <span></span>
+  </button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-toggle sidebar-toggle-in" type="button" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true">
+      <span></span>
+    </button>
+    <h2>YeildPredicto</h2>
+    <a href="{{ url_for('index') }}">🏠 Home</a>
+    <a href="{{ url_for('predict') }}">🌾 Prediction</a>
+    <a href="{{ url_for('how') }}">⚙️ How YeildPredicto Works</a>
+    <a href="{{ url_for('calendar') }}">📅 Crop Calendar</a>
+    <a href="{{ url_for('tips') }}">💡 Tips &amp; Insights</a>
+  </div>
+
+  <!-- ══ NAV ══ -->
+  <nav id="mainNav">
+    <a class="nav-brand" href="{{ url_for('index') }}">
+      <img class="nav-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="YeildPredicto"/>
+      <span class="nav-brand-name">Yeild<span>Predicto</span></span>
+    </a>
+    <div class="nav-right">
+      <select id="languageSwitcher" class="nav-lang">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="te">తెలుగు</option>
+        <option value="ta">தமிழ்</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="ml">മലയാളം</option>
+        <option value="mr">मराठी</option>
+        <option value="gu">ગુજરાતી</option>
+        <option value="pa">ਪੰਜਾਬੀ</option>
+        <option value="bn">বাংলা</option>
+        <option value="or">ଓଡ଼ିଆ</option>
+        <option value="as">অসমীয়া</option>
+        <option value="ur">اردو</option>
+        <option value="sa">संस्कृत</option>
+        <option value="kok">कोंकणी</option>
+        <option value="mni">Manipuri</option>
+        <option value="brx">Bodo</option>
+        <option value="doi">Dogri</option>
+        <option value="mai">Maithili</option>
+        <option value="sat">Santali</option>
+        <option value="ks">Kashmiri</option>
+        <option value="sd">Sindhi</option>
+        <option value="ne">Nepali</option>
+      </select>
+      <div class="nav-loc-pill" id="navLoc">📍 Detecting...</div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════
+       HERO
+  ══════════════════════════════════════ -->
+  <section class="how-hero">
+    <div class="how-hero-inner">
+      <div class="how-hero-text fi">
+        <span class="eyebrow">Process</span>
+        <h1>How <em>YeildPredicto</em> Works</h1>
+        <p>Three intelligent steps powered by GPS, satellite imagery, and 13 years of Indian agricultural data — giving you precise, personalised crop yield predictions in under 30 seconds.</p>
+        <div class="how-hero-pills">
+          <div class="how-pill"><div class="how-pill-dot"></div>GPS Auto-Detection</div>
+          <div class="how-pill"><div class="how-pill-dot"></div>AI + Machine Learning</div>
+          <div class="how-pill"><div class="how-pill-dot"></div>ICAR &amp; IMD Data</div>
+          <div class="how-pill"><div class="how-pill-dot"></div>Results in 30 sec</div>
+        </div>
+      </div>
+      <!-- Animated data cards (hidden on mobile) -->
+      <div class="how-hero-visual">
+        <div class="hw-card">
+          <div class="hw-card-icon hw-c1">📍</div>
+          <div style="flex:1">
+            <div class="hw-card-label">Location Detected</div>
+            <div class="hw-card-val">Mangalagiri, Andhra Pradesh</div>
+          </div>
+          <div class="hw-card-badge">✓ Live</div>
+        </div>
+        <div class="hw-card">
+          <div class="hw-card-icon hw-c2">🌡️</div>
+          <div style="flex:1">
+            <div class="hw-card-label">Climate Data Loaded</div>
+            <div class="hw-card-val">Temp 31°C · Humidity 68%</div>
+          </div>
+        </div>
+        <div class="hw-card">
+          <div class="hw-card-icon hw-c3">🧠</div>
+          <div style="flex:1">
+            <div class="hw-card-label">AI Processing</div>
+            <div class="hw-card-val">Analysing 47 crop parameters…</div>
+          </div>
+        </div>
+        <div class="hw-card">
+          <div class="hw-card-icon hw-c4">🌾</div>
+          <div style="flex:1">
+            <div class="hw-card-label">Top Prediction</div>
+            <div class="hw-card-val">Mango — 92% confidence</div>
+          </div>
+          <div class="hw-card-badge">4.2 t/ac</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DATA SOURCES STRIP ══ -->
+  <div class="data-strip">
+    <div class="data-strip-inner">
+      <div class="data-strip-label">Powered by</div>
+      <div class="data-strip-items">
+        <div class="ds-item">🛰️ ISRO Satellite Imagery</div>
+        <div class="ds-item">🌦️ IMD Weather Data</div>
+        <div class="ds-item">🌱 ICAR Soil Databases</div>
+        <div class="ds-item">📊 NABARD Farm Records</div>
+        <div class="ds-item">🗓️ 13 Years Yield History</div>
+        <div class="ds-item">📍 GPS &amp; OpenStreetMap</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       3 DETAILED STEPS
+  ══════════════════════════════════════ -->
+  <section class="how-steps" id="steps">
+    <div class="how-steps-inner">
+
+      <!-- STEP 1 -->
+      <div class="how-step-row fi">
+        <div class="step-text">
+          <div class="step-num-row">
+            <div class="step-num">1</div>
+            <div class="step-tag">Location Access</div>
+          </div>
+          <h2>Allow Location Access</h2>
+          <p>One tap on "Detect My Location" and YeildPredicto does all the heavy lifting. Your GPS coordinates are instantly cross-referenced with our satellite and climate databases — pulling hyper-local data specific to your exact farm, not just your district or state.</p>
+          <div class="step-chips">
+            <div class="step-chip">
+              <span class="sc-ico">🌡️</span>
+              <div class="sc-body"><strong>Temperature &amp; Humidity</strong>Real-time readings from the nearest IMD weather station</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">🪨</span>
+              <div class="sc-body"><strong>Soil Type Mapping</strong>ICAR-classified soil type for your exact GPS coordinates</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">🌧️</span>
+              <div class="sc-body"><strong>Rainfall Patterns</strong>Annual and seasonal rainfall averages for your location</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">🗺️</span>
+              <div class="sc-body"><strong>Compare Any District</strong>Switch to any district across India for yield comparison</div>
+            </div>
+          </div>
+          <a href="{{ url_for('predict') }}" class="step-btn step-btn-dark">📍 Try Location Detection →</a>
+        </div>
+        <div class="step-visual">
+          <div class="step-img-wrap">
+            <img src="{{ url_for('static', filename='images/blackCotton.jpg') }}"
+              alt="GPS location tracking"/>
+              <!-- onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800'"/> -->
+            <div class="step-img-overlay"></div>
+          </div>
+          <div class="float-badge">
+            <div class="fb-lbl">Soil Type Detected</div>
+            <div class="fb-val">Black Cotton</div>
+            <div class="fb-sub">Vertisol · pH 7.2 · Medium</div>
+            <div class="fb-bar"><div class="fb-fill" style="width:72%"></div></div>
+          </div>
+          <div class="float-badge-2">
+            <div class="fb2-icon">🌧️</div>
+            <div>
+              <div class="fb2-lbl">Annual Rainfall</div>
+              <div class="fb2-val">920 mm</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="how-step-row rev fi">
+        <div class="step-text">
+          <div class="step-num-row">
+            <div class="step-num">2</div>
+            <div class="step-tag">Crop Details</div>
+          </div>
+          <h2>Enter Your Crop Details</h2>
+          <p>Choose a crop category or let our AI suggest the best crop for your location automatically. Add your farm size, growing season, and water resources — that's all we need. Our model trained on 10+ years of ICAR &amp; IMD data handles everything else.</p>
+          <div class="step-chips">
+            <div class="step-chip">
+              <span class="sc-ico">🌾</span>
+              <div class="sc-body"><strong>50+ Crop Varieties</strong>Rice, wheat, mangoes, cotton, spices, and more</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">📅</span>
+              <div class="sc-body"><strong>Season Selection</strong>Kharif, Rabi, Zaid, or Year-Round crops supported</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">📐</span>
+              <div class="sc-body"><strong>Farm Size Input</strong>Acres, hectares, or square metres — all supported</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">💧</span>
+              <div class="sc-body"><strong>Water Resource Mapping</strong>Canal, borewell, rainwater, drip — multi-select</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-visual">
+          <div class="step-img-wrap">
+            <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&q=85"
+              alt="farmer entering crop details"
+              onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800'"/>
+            <div class="step-img-overlay"></div>
+          </div>
+          <div class="float-badge">
+            <div class="fb-lbl">AI Crop Match</div>
+            <div class="fb-val">Cotton</div>
+            <div class="fb-sub">Kharif · 5 Acres · Drip</div>
+            <div class="fb-bar"><div class="fb-fill" style="width:88%"></div></div>
+          </div>
+          <div class="float-badge-2">
+            <div class="fb2-icon">🤖</div>
+            <div>
+              <div class="fb2-lbl">AI Confidence</div>
+              <div class="fb2-val">88%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="how-step-row fi">
+        <div class="step-text">
+          <div class="step-num-row">
+            <div class="step-num">3</div>
+            <div class="step-tag">Yield Predictions</div>
+          </div>
+          <h2>Get Ranked Yield Predictions</h2>
+          <p>Our model processes over 47 parameters and returns a ranked list of crop predictions within seconds. Each result includes a confidence score, estimated yield per acre, market price benchmarks, and a full pros/cons analysis — everything you need to make the right decision.</p>
+          <div class="step-chips">
+            <div class="step-chip">
+              <span class="sc-ico">🏆</span>
+              <div class="sc-body"><strong>Ranked Crop List</strong>Top crops scored by suitability for your conditions</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">📈</span>
+              <div class="sc-body"><strong>Yield Estimates</strong>Min / avg / max yield per acre with confidence range</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">💰</span>
+              <div class="sc-body"><strong>Market Price Data</strong>Current MSP and market rates per quintal per crop</div>
+            </div>
+            <div class="step-chip">
+              <span class="sc-ico">⚖️</span>
+              <div class="sc-body"><strong>Pros &amp; Cons Analysis</strong>Water needs, disease risk, labour cost &amp; seasonal fit</div>
+            </div>
+          </div>
+          <a href="{{ url_for('predict') }}" class="step-btn step-btn-amber">🌾 Get My Prediction Now →</a>
+        </div>
+        <div class="step-visual">
+          <div class="step-img-wrap">
+            <img src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800&q=85"
+              alt="crop yield results"
+              onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800'"/>
+            <div class="step-img-overlay"></div>
+          </div>
+          <div class="float-badge">
+            <div class="fb-lbl">Estimated Yield</div>
+            <div class="fb-val">4.2 t/acre</div>
+            <div class="fb-sub">Range: 3.6 – 4.8 t/acre</div>
+            <div class="fb-bar"><div class="fb-fill" style="width:92%"></div></div>
+          </div>
+          <div class="float-badge-2">
+            <div class="fb2-icon">💰</div>
+            <div>
+              <div class="fb2-lbl">Market Price</div>
+              <div class="fb2-val">₹4,200/q</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       TECHNOLOGY SECTION
+  ══════════════════════════════════════ -->
+  <section class="tech-section fi" id="technology">
+    <div class="tech-inner">
+      <div class="section-header">
+        <div>
+          <span class="eyebrow">Under the Hood</span>
+          <h2 class="h2">The Technology Behind YeildPredicto</h2>
+          <p class="lead">A multi-layer AI system built specifically for Indian agroclimate conditions.</p>
+        </div>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-icon">🧠</div>
+          <h3>Machine Learning Models</h3>
+          <p>Ensemble of Random Forest, XGBoost, and Neural Network models trained on 13 years of district-level yield data from ICAR and state agriculture departments.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🛰️</div>
+          <h3>Remote Sensing</h3>
+          <p>NDVI and NDWI indices from ISRO Resourcesat-2 satellite imagery updated every 16 days — providing real-time crop health and moisture stress signals.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🌦️</div>
+          <h3>Climate Modelling</h3>
+          <p>IMD weather station data combined with ERA5 reanalysis for temperature, rainfall, humidity, and evapotranspiration forecasts at 1 km resolution.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🗺️</div>
+          <h3>Geo-Spatial Analysis</h3>
+          <p>District and village-level soil maps (NBSS&amp;LUP) fused with GPS coordinates to identify the exact soil series, pH, and nutrient profile for your farm.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       ACCURACY SECTION
+  ══════════════════════════════════════ -->
+  <section class="acc-section fi">
+    <div class="acc-inner">
+      <div class="acc-text">
+        <span class="eyebrow">Performance</span>
+        <h2>Accuracy You Can Rely On</h2>
+        <p>Validated against 4 seasons of actual farm yield data across 14 states, YeildPredicto consistently delivers predictions within ±8% of actual harvest output — making it one of the most reliable AI tools available to Indian farmers today.</p>
+        <div class="acc-metrics">
+          <div class="acc-metric">
+            <div class="acc-num">93%</div>
+            <div class="acc-lbl">Overall prediction accuracy across all crop varieties</div>
+          </div>
+          <div class="acc-metric">
+            <div class="acc-num">28</div>
+            <div class="acc-lbl">Indian states covered with location-specific models</div>
+          </div>
+          <div class="acc-metric">
+            <div class="acc-num">50+</div>
+            <div class="acc-lbl">Crop varieties with individually trained models</div>
+          </div>
+          <div class="acc-metric">
+            <div class="acc-num">±8%</div>
+            <div class="acc-lbl">Typical deviation from actual harvest yield</div>
+          </div>
+        </div>
+      </div>
+      <div class="acc-visual">
+        <img class="acc-img"
+          src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800&q=85"
+          alt="farmer in field"
+          onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800'"/>
+        <div class="acc-overlay">
+          <div class="acc-ov-lbl">Top Crop Accuracies</div>
+          <div class="acc-crop-row"><span class="acc-crop-name">🌾 Rice</span><span class="acc-crop-pct">96%</span></div>
+          <div class="acc-crop-bar"><div class="acc-crop-fill" style="width:96%"></div></div>
+          <div class="acc-crop-row"><span class="acc-crop-name">🌿 Cotton</span><span class="acc-crop-pct">91%</span></div>
+          <div class="acc-crop-bar"><div class="acc-crop-fill" style="width:91%"></div></div>
+          <div class="acc-crop-row"><span class="acc-crop-name">🍋 Mango</span><span class="acc-crop-pct">92%</span></div>
+          <div class="acc-crop-bar"><div class="acc-crop-fill" style="width:92%"></div></div>
+          <div class="acc-crop-row"><span class="acc-crop-name">🫘 Groundnut</span><span class="acc-crop-pct">89%</span></div>
+          <div class="acc-crop-bar" style="margin-bottom:0"><div class="acc-crop-fill" style="width:89%"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BOTTOM CTA ══ -->
+  <section class="how-cta fi">
+    <div class="how-cta-inner">
+      <h2>Ready to Predict Your Harvest?</h2>
+      <p>Join thousands of farmers across India who use YeildPredicto to make smarter, data-driven decisions every season. It's free, instant, and built for you.</p>
+      <div class="how-cta-btns">
+        <a href="{{ url_for('predict') }}" class="cta-btn-main">
+    🌾 Get My Free Prediction
+</a>
+
+<a href="{{ url_for('calendar') }}" class="cta-btn-ghost">
+    📅 View Crop Calendar
+</a>
+      </div>
+    </div>
+  </section>
+
+  <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    (function () {
+      const current = (location.pathname.split('/').pop() || 'how.html').toLowerCase();
+      document.querySelectorAll('.sidebar a').forEach(a => {
+        if ((a.getAttribute('href') || '').toLowerCase() === current) a.classList.add('active');
+      });
+    })();
+    (function () {
+      const body = document.body, KEY = 'yeildpredicto_sidebar_open';
+      const btnOut = document.querySelector('.sidebar-toggle-out');
+      const btnIn  = document.querySelector('.sidebar-toggle-in');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!btnOut || !btnIn) return;
+      const setOpen = open => {
+        body.classList.toggle('sidebar-open', open);
+        btnOut.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btnIn.setAttribute('aria-expanded',  open ? 'true' : 'false');
+        sessionStorage.setItem(KEY, open ? '1' : '0');
+      };
+      setOpen(sessionStorage.getItem(KEY) === '1');
+      btnOut.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
+      btnIn.addEventListener('click',  () => setOpen(!body.classList.contains('sidebar-open')));
+      overlay?.addEventListener('click', () => setOpen(false));
+      document.querySelectorAll('.sidebar a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+      window.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>YeildPredicto — Crop Calendar</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <style>
+    body { padding-left: 0; }
+    .sidebar { position:fixed;left:0;top:0;bottom:0;width:25vw;max-width:320px;z-index:800;background:rgba(253,246,227,0.96);border-right:1px solid rgba(26,58,10,0.10);padding:18px 14px;backdrop-filter:blur(14px);overflow:auto;transform:translateX(-110%);transition:transform .22s ease; }
+    .sidebar h2 { margin:4px 8px 14px;font-family:'Playfair Display',serif;color:#1a3a0a;font-size:26px; }
+    .sidebar a { display:block;padding:16px 18px;margin:6px 4px;border-radius:12px;text-decoration:none;color:#4a5e3a;font-weight:600;font-size:18px;border:1px solid rgba(26,58,10,0.08);background:rgba(255,255,255,0.65); }
+    .sidebar a:hover { border-color:rgba(26,58,10,0.18);color:#1a3a0a; }
+    .sidebar a.active { background:var(--forest);color:#fff;border-color:rgba(26,58,10,0.25);box-shadow:0 10px 28px rgba(26,58,10,0.14); }
+    .sidebar-toggle { position:fixed;top:14px;left:14px;width:44px;height:44px;border-radius:12px;border:1px solid rgba(26,58,10,0.14);background:rgba(255,255,255,0.85);z-index:850;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(14px); }
+    .sidebar-toggle-in { position:sticky;top:14px;left:0;margin:0 0 10px 4px;display:none; }
+    body.sidebar-open .sidebar-toggle-out { opacity:0;pointer-events:none; }
+    body.sidebar-open .sidebar-toggle-in  { display:flex; }
+    .sidebar-toggle span { display:block;width:18px;height:2px;background:var(--forest);border-radius:2px;position:relative; }
+    .sidebar-toggle span::before,.sidebar-toggle span::after { content:'';position:absolute;left:0;width:18px;height:2px;background:var(--forest);border-radius:2px; }
+    .sidebar-toggle span::before { top:-6px; }
+    .sidebar-toggle span::after  { top:6px; }
+    .sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.18);z-index:790;opacity:0;pointer-events:none;transition:opacity .22s ease; }
+    body.sidebar-open { padding-left:25vw; }
+    body.sidebar-open .sidebar { transform:translateX(0); }
+    body.sidebar-open .sidebar-overlay { opacity:1;pointer-events:auto; }
+  /* Sidebar logo styles */
+  .sidebar-logo { display:flex;align-items:center;margin:4px 8px 14px;font-family:'Playfair Display',serif;color:#1a3a0a;font-size:26px;font-weight:bold; }
+  .sidebar-logo img { width:42px;height:42px;border-radius:50%; }
+  .sidebar-logo .logo-text { margin-left:10px; }
+  .sidebar-logo .predict { color:rgb(155,140,56); }
+  .sidebar .logo-text { display:none; }
+  body.sidebar-open .sidebar .logo-text { display:inline; }
+    .cal-hero { background:linear-gradient(150deg, #0f2a06 0%, #1a4a0f 50%, #2d6a1f 100%);padding:120px 6% 80px;position:relative;overflow:hidden; }
+    .cal-hero::after { content:'';position:absolute;bottom:0;left:0;right:0;height:70px;background:var(--sand);clip-path:ellipse(55% 100% at 50% 100%); }
+    .cal-hero-inner { max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;position:relative;z-index:2; }
+    .cal-hero-text .eyebrow { background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85); }
+    .cal-hero-text h1 { font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,56px);font-weight:800;color:#fff;line-height:1.1;margin:16px 0 18px; }
+    .cal-hero-text h1 em { color:var(--amber);font-style:italic; }
+    .cal-hero-text p { font-size:15px;color:rgba(255,255,255,0.68);line-height:1.8;max-width:440px;margin-bottom:28px; }
+    .season-legend { display:flex;gap:10px;flex-wrap:wrap; }
+    .sl-pill { display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:24px;font-size:13px;font-weight:600;border:1.5px solid; }
+    .sl-kharif { background:rgba(45,106,31,0.2);border-color:rgba(90,158,58,0.5);color:#a8d88a; }
+    .sl-rabi    { background:rgba(200,134,10,0.2);border-color:rgba(200,134,10,0.5);color:#f0c060; }
+    .sl-zaid    { background:rgba(26,85,140,0.25);border-color:rgba(80,140,200,0.5);color:#90c0f0; }
+    .sl-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+    .sl-kharif .sl-dot { background:#5a9e3a; }
+    .sl-rabi .sl-dot   { background:var(--amber); }
+    .sl-zaid .sl-dot   { background:#5090c8; }
+    /* Hero mini grid */
+    .cal-hero-visual { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
+    .cal-mini-card { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;text-align:center; }
+    .cal-mini-card.current { background:rgba(200,134,10,0.25);border-color:rgba(200,134,10,0.6);box-shadow:0 0 0 2px rgba(200,134,10,0.35); }
+    .cmc-m  { font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px; }
+    .cmc-dots { display:flex;gap:3px;justify-content:center;flex-wrap:wrap;margin-bottom:4px; }
+    .cmc-s  { width:6px;height:6px;border-radius:50%; }
+    .cmc-c  { font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .cmc-now { font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px; }
+
+    /* MAIN */
+    .cal-main { background:var(--sand);padding:70px 6% 80px; }
+    .cal-main-inner { max-width:1280px;margin:0 auto; }
+    /* Filter bar */
+    .cal-filter-bar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:36px; }
+    .cal-filter-tabs { display:flex;gap:8px;flex-wrap:wrap; }
+    .cft { display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:24px;font-size:13px;font-weight:600;border:1.5px solid rgba(26,58,10,0.14);background:var(--white);color:var(--muted);cursor:pointer;transition:all .2s; }
+    .cft:hover { border-color:rgba(26,58,10,0.3);color:var(--forest); }
+    .cft.active { background:var(--forest);color:#fff;border-color:var(--forest);box-shadow:0 4px 16px rgba(26,58,10,0.2); }
+    .cft-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+    .cft-all  .cft-dot { background:var(--ghost); }
+    .cft.active .cft-dot { background:rgba(255,255,255,0.7); }
+    .cft-kharif .cft-dot { background:var(--leaf); }
+    .cft-rabi   .cft-dot { background:var(--amber); }
+    .cft-zaid   .cft-dot { background:#5090c8; }
+    .cft-year   .cft-dot { background:#a040b0; }
+    .cal-cur-badge { display:flex;align-items:center;gap:8px;padding:8px 18px;background:rgba(200,134,10,0.1);border:1.5px solid rgba(200,134,10,0.3);border-radius:24px;font-size:13px;font-weight:600;color:var(--gold); }
+    .ccb-dot { width:8px;height:8px;border-radius:50%;background:var(--amber);animation:pulse3 1.5s ease infinite; }
+    @keyframes pulse3{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+    /* Month cards */
+    .cal-grid-new { display:grid;grid-template-columns:repeat(4,1fr);gap:18px; }
+    .cal-month-card { background:var(--white);border-radius:var(--r-lg);border:1.5px solid rgba(26,58,10,0.08);overflow:hidden;transition:all .3s;position:relative; }
+    .cal-month-card:hover { transform:translateY(-5px);box-shadow:0 16px 48px rgba(26,58,10,0.13);border-color:rgba(26,58,10,0.18); }
+    .cal-month-card.is-current { border-color:var(--amber);box-shadow:0 0 0 3px rgba(200,134,10,0.15); }
+    .cal-month-card.hidden { display:none; }
+    .cmc-img-wrap { position:relative;height:110px;overflow:hidden; }
+    .cmc-img { width:100%;height:100%;object-fit:cover;transition:transform .5s; }
+    .cal-month-card:hover .cmc-img { transform:scale(1.08); }
+    .cmc-img-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(10,30,5,0.6) 0%,transparent 60%); }
+    .cmc-season-tags { position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap; }
+    .cmc-stag { padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;backdrop-filter:blur(4px); }
+    .stag-kharif { background:rgba(45,106,31,0.8);color:#c8f0a0;border:1px solid rgba(90,158,58,0.5); }
+    .stag-rabi   { background:rgba(180,110,0,0.85);color:#ffe0a0;border:1px solid rgba(200,134,10,0.5); }
+    .stag-zaid   { background:rgba(20,70,140,0.8);color:#b0d4f8;border:1px solid rgba(80,140,200,0.5); }
+    .stag-year   { background:rgba(120,30,160,0.8);color:#e0b8f8;border:1px solid rgba(160,60,200,0.5); }
+    .cmc-cur-label { position:absolute;bottom:8px;right:8px;background:var(--amber);color:#fff;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700; }
+    .cmc-body { padding:14px 16px; }
+    .cmc-month-title { font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--forest);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between; }
+    .cmc-crop-list { display:flex;flex-direction:column;gap:6px; }
+    .cmc-crop-item { display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r-sm);font-size:12px;font-weight:500;color:var(--muted);background:var(--pale);border:1px solid rgba(26,58,10,0.06);cursor:pointer;transition:all .15s; }
+    .cmc-crop-item:hover { background:var(--mint);border-color:rgba(26,58,10,0.15); }
+    .cmc-crop-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+    .dot-kharif { background:var(--leaf); }
+    .dot-rabi   { background:var(--amber); }
+    .dot-zaid   { background:#5090c8; }
+    .dot-year   { background:#a040b0; }
+    .cmc-predict-lnk { margin-left:auto;font-size:10px;font-weight:700;color:var(--leaf);white-space:nowrap; }
+    .cmc-weather { display:flex;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(26,58,10,0.07); }
+    .cmc-w-chip { flex:1;text-align:center;padding:5px 3px;background:var(--white);border-radius:6px;border:1px solid rgba(26,58,10,0.07);font-size:10px;color:var(--ghost); }
+    .cmc-w-val  { font-weight:700;color:var(--muted);font-size:10px;display:block;margin-bottom:1px; }
+
+    /* SEASON INFO */
+    .season-info-section { background:var(--parchment);padding:70px 6%; }
+    .season-info-inner   { max-width:1280px;margin:0 auto; }
+    .season-info-grid    { display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:44px; }
+    .season-card { border-radius:var(--r-lg);overflow:hidden;border:1px solid rgba(26,58,10,0.08);transition:all .3s; }
+    .season-card:hover { transform:translateY(-5px);box-shadow:0 16px 44px rgba(26,58,10,0.12); }
+    .season-card-top { padding:26px;position:relative; }
+    .sc-kharif-top { background:linear-gradient(135deg,#1a4a0f,#2d6a1f); }
+    .sc-rabi-top   { background:linear-gradient(135deg,#7a4800,#c8860a); }
+    .sc-zaid-top   { background:linear-gradient(135deg,#0f3060,#1a5aa0); }
+    .season-card-icon { font-size:34px;margin-bottom:12px; }
+    .season-card-top h3 { font-family:'Playfair Display',serif;font-size:21px;font-weight:800;color:#fff;margin-bottom:5px; }
+    .sc-months { font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:10px; }
+    .season-card-top p { font-size:13px;color:rgba(255,255,255,0.75);line-height:1.7; }
+    .season-card-body { padding:18px 20px;background:var(--white); }
+    .sc-crops-title { font-size:11px;font-weight:700;color:var(--ghost);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px; }
+    .sc-crop-tags { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px; }
+    .sc-tag { padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+    .sc-tag-green { background:var(--pale);color:var(--leaf);border:1px solid rgba(26,58,10,0.1); }
+    .sc-tag-amber { background:rgba(200,134,10,0.1);color:var(--gold);border:1px solid rgba(200,134,10,0.2); }
+    .sc-tag-blue  { background:rgba(80,140,200,0.1);color:#2060a0;border:1px solid rgba(80,140,200,0.2); }
+    .sc-facts { display:flex;flex-direction:column;gap:5px; }
+    .sc-fact { display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--muted);line-height:1.5; }
+    .sc-fact::before { content:'→';color:var(--leaf);font-weight:700;flex-shrink:0;margin-top:1px; }
+
+    /* TIPS STRIP */
+    .cal-tips { background:var(--forest);padding:48px 6%; }
+    .cal-tips-inner { max-width:1280px;margin:0 auto; }
+    .cal-tips-inner > h2 { font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:22px; }
+    .tips-row { display:grid;grid-template-columns:repeat(4,1fr);gap:14px; }
+    .tsc { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:var(--r);padding:18px;transition:all .25s; }
+    .tsc:hover { background:rgba(255,255,255,0.13);transform:translateY(-3px); }
+    .tsc-icon  { font-size:24px;margin-bottom:9px; }
+    .tsc-title { font-size:14px;font-weight:700;color:#fff;margin-bottom:5px; }
+    .tsc-text  { font-size:12px;color:rgba(255,255,255,0.65);line-height:1.65; }
+
+    /* CTA */
+    .cal-cta { background:var(--parchment);padding:70px 6%;text-align:center; }
+    .cal-cta-inner { max-width:600px;margin:0 auto; }
+    .cal-cta h2 { font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,40px);font-weight:800;color:var(--forest);margin-bottom:14px;line-height:1.2; }
+    .cal-cta p  { font-size:15px;color:var(--muted);line-height:1.8;margin-bottom:30px; }
+    .cal-cta-btns { display:flex;gap:12px;justify-content:center;flex-wrap:wrap; }
+    .cal-btn-main  { padding:14px 34px;background:var(--forest);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px; }
+    .cal-btn-main:hover { background:var(--leaf);transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,58,10,0.2); }
+    .cal-btn-ghost { padding:14px 34px;background:transparent;color:var(--forest);border:1.5px solid var(--forest);border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s; }
+    .cal-btn-ghost:hover { background:var(--pale); }
+
+    @media(max-width:1024px){
+      .cal-hero-inner{grid-template-columns:1fr;}
+      .cal-hero-visual{display:none;}
+      .cal-grid-new{grid-template-columns:repeat(3,1fr);}
+      .season-info-grid{grid-template-columns:1fr 1fr;}
+      .tips-row{grid-template-columns:1fr 1fr;}
+    }
+    @media(max-width:680px){
+      .cal-hero{padding:100px 6% 56px;}
+      .cal-grid-new{grid-template-columns:1fr 1fr;}
+      .season-info-grid{grid-template-columns:1fr;}
+      .tips-row{grid-template-columns:1fr 1fr;}
+      .cal-filter-bar{flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+</head>
+<body data-page="calendar">
+
+<button class="sidebar-toggle sidebar-toggle-out" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false"><span></span></button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-toggle sidebar-toggle-in" type="button" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true"><span></span></button>
+  <br>
+  <div class="sidebar-logo">
+    <img src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="YeildPredicto Logo">
+    <span class="logo-text">Yeild<span class="predict">Predicto</span></span>
+  </div>
+  <a href="{{ url_for('index') }}">🏠 Home</a>
+  <a href="{{ url_for('predict') }}">🌾 Prediction</a>
+  <a href="{{ url_for('how') }}">⚙️ How YeildPredicto Works</a>
+  <a href="{{ url_for('calendar') }}">📅 Crop Calendar</a>
+  <a href="{{ url_for('tips') }}">💡 Tips &amp; Insights</a>
+</div>
+
+<nav id="mainNav">
+  <a class="nav-brand" href="{{ url_for('index') }}">
+    <img class="nav-logo" src="{{ url_for('static', filename='images/Main Logo.jpeg') }}" alt="YeildPredicto"/>
+    <span class="nav-brand-name">Yeild<span>Predicto</span></span>
+  </a>
+  <div class="nav-right">
+    <select id="languageSwitcher" class="nav-lang">
+      <option value="en">English</option><option value="hi">हिन्दी</option><option value="te">తెలుగు</option>
+      <option value="ta">தமிழ்</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option>
+      <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option>
+      <option value="bn">বাংলা</option><option value="ur">اردو</option>
+    </select>
+    <div class="nav-loc-pill" id="navLoc">📍 Detecting...</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="cal-hero">
+  <div class="cal-hero-inner">
+    <div class="cal-hero-text fi">
+      <span class="eyebrow">Planning</span>
+      <h1>India Crop <em>Calendar</em></h1>
+      <p>A complete month-by-month planting and harvesting guide for all major Indian crops — covering Kharif, Rabi, and Zaid seasons across 28 states.</p>
+      <div class="season-legend">
+        <div class="sl-pill sl-kharif"><div class="sl-dot"></div>Kharif (Jun–Oct)</div>
+        <div class="sl-pill sl-rabi"><div class="sl-dot"></div>Rabi (Nov–Mar)</div>
+        <div class="sl-pill sl-zaid"><div class="sl-dot"></div>Zaid (Mar–Jun)</div>
+      </div>
+    </div>
+    <div class="cal-hero-visual" id="heroMonthGrid"></div>
+  </div>
+</section>
+
+<!-- MAIN CALENDAR -->
+<section class="cal-main" id="calendar">
+  <div class="cal-main-inner">
+    <div class="cal-filter-bar">
+      <div class="cal-filter-tabs">
+        <button class="cft cft-all active" data-filter="all"><div class="cft-dot"></div>All Seasons</button>
+        <button class="cft cft-kharif" data-filter="kharif"><div class="cft-dot"></div>🌧️ Kharif</button>
+        <button class="cft cft-rabi" data-filter="rabi"><div class="cft-dot"></div>🌾 Rabi</button>
+        <button class="cft cft-zaid" data-filter="zaid"><div class="cft-dot"></div>☀️ Zaid</button>
+        <button class="cft cft-year" data-filter="year"><div class="cft-dot"></div>🔁 Year Round</button>
+      </div>
+      <div class="cal-cur-badge"><div class="ccb-dot"></div><span id="currentMonthLabel">Current Month</span></div>
+    </div>
+    <div class="cal-grid-new" id="calGridNew"></div>
+  </div>
+</section>
+
+<!-- SEASON INFO -->
+<section class="season-info-section fi" id="seasons">
+  <div class="season-info-inner">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Season Guide</span>
+        <h2 class="h2">Understanding India's Three Crop Seasons</h2>
+        <p class="lead">Each season brings unique conditions, crops, and opportunities for Indian farmers.</p>
+      </div>
+    </div>
+    <div class="season-info-grid">
+      <div class="season-card fi">
+        <div class="season-card-top sc-kharif-top">
+          <div class="season-card-icon">🌧️</div>
+          <h3>Kharif Season</h3>
+          <div class="sc-months">June – October</div>
+          <p>The monsoon crop season — sown at the start of the southwest monsoon and harvested after it withdraws. Relies almost entirely on rainfall.</p>
+        </div>
+        <div class="season-card-body">
+          <div class="sc-crops-title">Key Kharif Crops</div>
+          <div class="sc-crop-tags">
+            <span class="sc-tag sc-tag-green">🌾 Rice</span><span class="sc-tag sc-tag-green">🌿 Cotton</span>
+            <span class="sc-tag sc-tag-green">🌽 Maize</span><span class="sc-tag sc-tag-green">🫘 Soybean</span>
+            <span class="sc-tag sc-tag-green">🥜 Groundnut</span><span class="sc-tag sc-tag-green">🌱 Bajra</span>
+            <span class="sc-tag sc-tag-green">🫘 Toor Dal</span><span class="sc-tag sc-tag-green">🌶️ Chilli</span>
+          </div>
+          <div class="sc-facts">
+            <div class="sc-fact">Sowing starts with the first monsoon rains in June</div>
+            <div class="sc-fact">Harvest between September and October</div>
+            <div class="sc-fact">High humidity increases pest and disease pressure</div>
+            <div class="sc-fact">Contributes ~60% of India's total food grain output</div>
+          </div>
+        </div>
+      </div>
+      <div class="season-card fi">
+        <div class="season-card-top sc-rabi-top">
+          <div class="season-card-icon">🌾</div>
+          <h3>Rabi Season</h3>
+          <div class="sc-months">November – March/April</div>
+          <p>The winter crop season — sown after the monsoon retreats. Depends on residual soil moisture, irrigation, and winter rains for growth.</p>
+        </div>
+        <div class="season-card-body">
+          <div class="sc-crops-title">Key Rabi Crops</div>
+          <div class="sc-crop-tags">
+            <span class="sc-tag sc-tag-amber">🌾 Wheat</span><span class="sc-tag sc-tag-amber">🧅 Onion</span>
+            <span class="sc-tag sc-tag-amber">🥔 Potato</span><span class="sc-tag sc-tag-amber">🫘 Chickpea</span>
+            <span class="sc-tag sc-tag-amber">🌻 Mustard</span><span class="sc-tag sc-tag-amber">🧄 Garlic</span>
+            <span class="sc-tag sc-tag-amber">🫘 Lentil</span><span class="sc-tag sc-tag-amber">🥦 Peas</span>
+          </div>
+          <div class="sc-facts">
+            <div class="sc-fact">Sown November–December after monsoon withdrawal</div>
+            <div class="sc-fact">Cool dry winters ideal for grain quality</div>
+            <div class="sc-fact">Needs 2–3 irrigations for most crops</div>
+            <div class="sc-fact">Harvested in March–April before summer heat</div>
+          </div>
+        </div>
+      </div>
+      <div class="season-card fi">
+        <div class="season-card-top sc-zaid-top">
+          <div class="season-card-icon">☀️</div>
+          <h3>Zaid Season</h3>
+          <div class="sc-months">March – June</div>
+          <p>The summer crop season — a short-duration season between Rabi and Kharif, utilising residual irrigation. Good for fast-growing vegetables and melons.</p>
+        </div>
+        <div class="season-card-body">
+          <div class="sc-crops-title">Key Zaid Crops</div>
+          <div class="sc-crop-tags">
+            <span class="sc-tag sc-tag-blue">🍉 Watermelon</span><span class="sc-tag sc-tag-blue">🥒 Cucumber</span>
+            <span class="sc-tag sc-tag-blue">🌽 Summer Maize</span><span class="sc-tag sc-tag-blue">🫛 Moong Dal</span>
+            <span class="sc-tag sc-tag-blue">🌿 Cowpea</span><span class="sc-tag sc-tag-blue">🥬 Leafy Veg</span>
+          </div>
+          <div class="sc-facts">
+            <div class="sc-fact">Short duration crops (45–75 days) are ideal</div>
+            <div class="sc-fact">High temperatures accelerate crop growth</div>
+            <div class="sc-fact">Irrigation essential — no monsoon support</div>
+            <div class="sc-fact">Allows an extra income cycle each year</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIPS STRIP -->
+<section class="cal-tips fi">
+  <div class="cal-tips-inner">
+    <h2>Seasonal Farming Tips</h2>
+    <div class="tips-row">
+      <div class="tsc"><div class="tsc-icon">🌱</div><div class="tsc-title">Soil Preparation</div><div class="tsc-text">Deep plough 2–3 weeks before sowing to expose pests to sun, improve aeration, and incorporate last season's stubble as organic matter.</div></div>
+      <div class="tsc"><div class="tsc-icon">💧</div><div class="tsc-title">Irrigation Timing</div><div class="tsc-text">Water at critical growth stages — germination, flowering, and grain filling. Avoid waterlogging which causes root rot and yield loss.</div></div>
+      <div class="tsc"><div class="tsc-icon">🔄</div><div class="tsc-title">Crop Rotation</div><div class="tsc-text">Alternate cereals with legumes every season to fix nitrogen naturally, break pest cycles, and reduce fertilizer costs by up to 30%.</div></div>
+      <div class="tsc"><div class="tsc-icon">📊</div><div class="tsc-title">Use AI Prediction</div><div class="tsc-text">Use YeildPredicto before each sowing season to validate your crop choice against satellite data, weather forecasts, and soil conditions.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cal-cta fi">
+  <div class="cal-cta-inner">
+    <h2>Know What to Plant This Season</h2>
+    <p>Get a personalised crop recommendation based on your GPS location, soil type, and current weather — right now, for free.</p>
+    <div class="cal-cta-btns">
+      <button class="cal-btn-main" onclick="window.location.href='{{ url_for('predict') }}'">🌾 Get My Crop Prediction</button>
+      <button class="cal-btn-ghost" onclick="window.location.href='{{ url_for('tips') }}'">💡 View Farming Tips</button>
+    </div>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lang.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+const FULL_CAL = {
+  January:   { img:'../images/peas.png', temp:'12–22°C', rain:'Low', humidity:'55%',
+    crops:[{name:'Wheat',s:'rabi'},{name:'Mustard',s:'rabi'},{name:'Peas',s:'rabi'},{name:'Lentil',s:'rabi'}] },
+  February:  { img:'../images/sunflowerr.png', temp:'14–26°C', rain:'Low', humidity:'50%',
+    crops:[{name:'Wheat',s:'rabi'},{name:'Chickpea',s:'rabi'},{name:'Sunflower',s:'rabi'}] },
+  March:     { img:'../images/sugarcane.png', temp:'18–32°C', rain:'Low', humidity:'45%',
+    crops:[{name:'Sugarcane',s:'year'},{name:'Watermelon',s:'zaid'},{name:'Cucumber',s:'zaid'},{name:'Wheat Harvest',s:'rabi'}] },
+  April:     { img:'../images/moong.png', temp:'22–38°C', rain:'Low', humidity:'40%',
+    crops:[{name:'Watermelon',s:'zaid'},{name:'Moong Dal',s:'zaid'},{name:'Groundnut',s:'zaid'},{name:'Vegetables',s:'zaid'}] },
+  May:       { img:'../images/jowar.png', temp:'26–42°C', rain:'Low', humidity:'38%',
+    crops:[{name:'Paddy Nursery',s:'kharif'},{name:'Cotton (sow)',s:'kharif'},{name:'Jowar',s:'zaid'}] },
+  June:      { img:'../images/rice.png', temp:'24–34°C', rain:'High', humidity:'80%',
+    crops:[{name:'Rice',s:'kharif'},{name:'Maize',s:'kharif'},{name:'Soybean',s:'kharif'},{name:'Cotton',s:'kharif'}] },
+  July:      { img:'../images/groundnut.png', temp:'24–32°C', rain:'Heavy', humidity:'88%',
+    crops:[{name:'Rice',s:'kharif'},{name:'Sorghum',s:'kharif'},{name:'Bajra',s:'kharif'},{name:'Groundnut',s:'kharif'}] },
+  August:    { img:'../images/maize.png', temp:'24–31°C', rain:'Heavy', humidity:'85%',
+    crops:[{name:'Rice',s:'kharif'},{name:'Maize',s:'kharif'},{name:'Pulses',s:'kharif'}] },
+  September: { img:'../images/rice.png', temp:'22–30°C', rain:'Medium', humidity:'78%',
+    crops:[{name:'Rice Harvest',s:'kharif'},{name:'Vegetables',s:'year'},{name:'Maize Harvest',s:'kharif'}] },
+  October:   { img:'../images/wheat.png', temp:'18–28°C', rain:'Low', humidity:'60%',
+    crops:[{name:'Wheat (sow)',s:'rabi'},{name:'Mustard',s:'rabi'},{name:'Potato',s:'rabi'},{name:'Chickpea',s:'rabi'}] },
+  November:  { img:'../images/potato.png', temp:'14–24°C', rain:'Low', humidity:'58%',
+    crops:[{name:'Wheat',s:'rabi'},{name:'Barley',s:'rabi'},{name:'Peas',s:'rabi'},{name:'Potato',s:'rabi'}] },
+  December:  { img:'../images/mustard.png', temp:'10–20°C', rain:'Low', humidity:'52%',
+    crops:[{name:'Wheat',s:'rabi'},{name:'Mustard',s:'rabi'},{name:'Vegetables',s:'year'},{name:'Lentil',s:'rabi'}] }
+};
+const MONTHS = Object.keys(FULL_CAL);
+const DOT_COLOR = {kharif:'#5a9e3a',rabi:'#c8860a',zaid:'#5090c8',year:'#a040b0'};
+const DOT_CLASS  = {kharif:'dot-kharif',rabi:'dot-rabi',zaid:'dot-zaid',year:'dot-year'};
+const STAG_CLASS = {kharif:'stag-kharif',rabi:'stag-rabi',zaid:'stag-zaid',year:'stag-year'};
+const STAG_LABEL = {kharif:'Kharif',rabi:'Rabi',zaid:'Zaid',year:'Year Round'};
+
+const curMonth = new Date().toLocaleString('default',{month:'long'});
+
+// Hero mini grid
+const heroGrid = document.getElementById('heroMonthGrid');
+if(heroGrid){
+  heroGrid.innerHTML = MONTHS.map(m=>{
+    const d=FULL_CAL[m], isCur=m===curMonth;
+    const uniq=[...new Set(d.crops.map(c=>c.s))];
+    const dots=uniq.map(s=>`<div class="cmc-s" style="background:${DOT_COLOR[s]||'#aaa'}"></div>`).join('');
+    return `<div class="cal-mini-card${isCur?' current':''}">
+      <div class="cmc-m">${m.slice(0,3)}</div>
+      <div class="cmc-dots">${dots}</div>
+      <div class="cmc-c">${d.crops[0].name}</div>
+      ${isCur?'<div class="cmc-now">Now</div>':''}
+    </div>`;
+  }).join('');
+}
+
+// Current badge
+const cb = document.getElementById('currentMonthLabel');
+if(cb) cb.textContent = 'Now: '+curMonth;
+
+// Main calendar grid
+const grid = document.getElementById('calGridNew');
+if(grid){
+  grid.innerHTML = MONTHS.map(m=>{
+    const d=FULL_CAL[m], isCur=m===curMonth;
+    const allS=[...new Set(d.crops.map(c=>c.s))];
+    const stags=allS.map(s=>`<span class="cmc-stag ${STAG_CLASS[s]||'stag-kharif'}">${STAG_LABEL[s]}</span>`).join('');
+    const cropItems=d.crops.map(c=>`
+      <div class="cmc-crop-item" onclick="window.location.href='{{ url_for('predict') }}'">
+        <div class="cmc-crop-dot ${DOT_CLASS[c.s]||'dot-kharif'}"></div>
+        <span>${c.name}</span>
+        <span class="cmc-predict-lnk">Predict →</span>
+      </div>`).join('');
+    return `
+      <div class="cal-month-card${isCur?' is-current':''}" data-seasons="${allS.join(',')}">
+        <div class="cmc-img-wrap">
+          <img class="cmc-img" src="${d.img}" alt="${m}" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500'"/>
+          <div class="cmc-img-overlay"></div>
+          <div class="cmc-season-tags">${stags}</div>
+          ${isCur?'<div class="cmc-cur-label">📅 This Month</div>':''}
+        </div>
+        <div class="cmc-body">
+          <div class="cmc-month-title">${m}${isCur?' <span style="font-size:18px">🌱</span>':''}</div>
+          <div class="cmc-crop-list">${cropItems}</div>
+          <div class="cmc-weather">
+            <div class="cmc-w-chip"><span class="cmc-w-val">🌡️ ${d.temp}</span>Temp</div>
+            <div class="cmc-w-chip"><span class="cmc-w-val">🌧️ ${d.rain}</span>Rain</div>
+            <div class="cmc-w-chip"><span class="cmc-w-val">💧 ${d.humidity}</span>Humid</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Filter tabs
+document.querySelectorAll('.cft').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.cft').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    const f=this.dataset.filter;
+    document.querySelectorAll('.cal-month-card').forEach(card=>{
+      const s=card.dataset.seasons||'';
+      card.classList.toggle('hidden', f!=='all' && !s.includes(f));
+    });
+  });
+});
+</script>
+<script>
+(function(){
+  const cur=(location.pathname.split('/').pop()||'calendar.html').toLowerCase();
+  document.querySelectorAll('.sidebar a').forEach(a=>{
+    if((a.getAttribute('href')||'').toLowerCase()===cur) a.classList.add('active');
+  });
+})();
+(function(){
+  const body=document.body,KEY='yeildpredicto_sidebar_open';
+  const btnOut=document.querySelector('.sidebar-toggle-out');
+  const btnIn =document.querySelector('.sidebar-toggle-in');
+  const overlay=document.getElementById('sidebarOverlay');
+  if(!btnOut||!btnIn) return;
+  const setOpen=open=>{
+    body.classList.toggle('sidebar-open',open);
+    btnOut.setAttribute('aria-expanded',open?'true':'false');
+    btnIn.setAttribute('aria-expanded', open?'true':'false');
+    sessionStorage.setItem(KEY,open?'1':'0');
+  };
+  setOpen(sessionStorage.getItem(KEY)==='1');
+  btnOut.addEventListener('click',()=>setOpen(!body.classList.contains('sidebar-open')));
+  btnIn.addEventListener('click', ()=>setOpen(!body.classList.contains('sidebar-open')));
+  overlay?.addEventListener('click',()=>setOpen(false));
+  document.querySelectorAll('.sidebar a').forEach(a=>a.addEventListener('click',()=>setOpen(false)));
+  window.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false);});
+})();
+</script>
+</body>
+</html>
