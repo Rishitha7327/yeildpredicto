@@ -140,3 +140,58 @@ The platform now includes a **floating Grok chatbot** available on every page th
    - Show on home, prediction, calendar, tips, and how-it-works pages
    - Store conversation history locally
    - Work without requiring user authentication
+## 🔧 Troubleshooting
+
+### Deploy fails with "Exited with status 1"
+
+**Problem:** Build succeeds but app crashes on startup.
+
+**Cause:** The dataset file (`dataset/all_india_crop_dataset_59crops.xlsx`) is missing on Render. This file is gitignored because it's too large to commit.
+
+**Solution:**
+1. The app now has a fallback mechanism — it will start even without the dataset
+2. Models will use placeholder predictions until trained
+3. **To train real models:** Upload your dataset file locally, run `python app.py` to train, then commit the `backend/models/trained_model.pkl` file
+4. Or provide the dataset via a private storage service and download it during the build
+
+**Option A: Use pre-trained model (Recommended)**
+```bash
+# Local: train model first
+python app.py  # This trains on your dataset
+
+# Then commit the trained model
+git add backend/models/trained_model.pkl
+git commit -m "Add trained model"
+git push
+```
+
+**Option B: Download dataset during deploy**
+Add to `Procfile`:
+```
+web: curl -o dataset/all_india_crop_dataset_59crops.xlsx https://your-storage-url/dataset.xlsx && gunicorn app:app
+```
+
+### API key errors
+
+If you see warnings about missing API keys in logs, the app still works with fallback data. Add keys in Render dashboard Settings → Environment Variables.
+
+### Database connection errors
+
+The app uses SQLite by default on Render. To use MySQL:
+```bash
+# In Render dashboard, add:
+DB_HOST=your-mysql-host.com
+DB_USER=username
+DB_PASSWORD=password
+DB_NAME=yeildpredicto
+```
+
+If MySQL isn't available, SQLite is used automatically.
+
+## 📜 License
+
+MIT — Feel free to use for personal or commercial projects!
+
+## 🤝 Contributing
+
+Pull requests welcome! Please follow the existing code style.

@@ -34,7 +34,7 @@ def get_models():
         train_model, train_crop_models,
         save_models, load_models
     )
-    from backend.data.dataset import load_dataset, load_dataset_by_crop
+    from dataset import load_dataset, load_dataset_by_crop
 
     if _should_retrain():
         print("🔄 Training models (first run or scheduled retrain)...")
@@ -45,6 +45,10 @@ def get_models():
             _crop_models = train_crop_models(crop_data, _general_model)
             save_models(_general_model, _crop_models)
             print("✅ Models trained and saved")
+        except FileNotFoundError as e:
+            print(f"⚠️  Dataset file not found: {e}")
+            print("⚠️  Using fallback mock models (predictions will be placeholder values)")
+            _general_model, _crop_models = _fallback_models()
         except Exception as e:
             print(f"❌ Training failed: {e}")
             print("⚠️ Using fallback mock models")
