@@ -95,9 +95,9 @@ def predict():
         # PREPARE FEATURES
         # ==============================
         features = pd.DataFrame([[
-            # Soil
-            soil.get("N", 50),
-            soil.get("P", 30),
+            # Soil (matching FEATURE_COLS order)
+            soil.get("N", 80),
+            soil.get("P", 40),
             soil.get("K", 40),
 
             # Weather
@@ -106,9 +106,9 @@ def predict():
             weather.get("rainfall", 100),
 
             # Soil extra
-            soil.get("ph", 7),
-            soil.get("soc", 1.5),
-            soil.get("moisture", 20),
+            soil.get("ph", 6.8),
+            soil.get("soc", 8),
+            soil.get("moisture", 30),
 
             # Satellite
             sat.get("solar_radiation", 15),
@@ -117,11 +117,11 @@ def predict():
             agri.get("crop_duration", 120),
             agri.get("plant_population", 100000),
 
-            # Encoded
+            # Encoded Categorical
             agri.get("state_encoded", 0),
             agri.get("season_encoded", 0),
             agri.get("year", 2024),
-            soil.get("soil_type_encoded", 0),
+            soil.get("soil_type_encoded", 3),
             agri.get("crop_variety_encoded", 0)
 
         ]], columns=FEATURE_COLS)

@@ -1,5 +1,10 @@
 import pandas as pd
 from backend.data.dataset import load_dataset
+from sklearn.preprocessing import LabelEncoder
+
+# Soil type encoder
+SOIL_TYPE_ENCODER = LabelEncoder()
+SOIL_TYPE_ENCODER.fit(['Clay', 'Clay Loam', 'Sandy', 'Loam', 'Silt Loam', 'Sandy Loam'])
 
 
 # ==============================
@@ -48,6 +53,12 @@ def get_soil_data(lat=17.3850, lon=78.4867):
         else:
             fertility = "Low"
 
+        # Encode soil type
+        try:
+            soil_type_encoded = int(SOIL_TYPE_ENCODER.transform([soil_type])[0])
+        except:
+            soil_type_encoded = 3  # Default to Loam
+
         return {
             "N": round(N, 2),
             "P": round(P, 2),
@@ -57,8 +68,8 @@ def get_soil_data(lat=17.3850, lon=78.4867):
             "sand": sand,
             "silt": silt,
             "soc": round(soc, 2),
-
             "soil_type": soil_type,
+            "soil_type_encoded": soil_type_encoded,
             "moisture": round(moisture, 2),
             "fertility": fertility
         }
@@ -77,6 +88,7 @@ def get_soil_data(lat=17.3850, lon=78.4867):
             "silt": 30,
             "soc": 8,
             "soil_type": "Loam",
+            "soil_type_encoded": 3,
             "moisture": 30,
             "fertility": "Medium"
         }

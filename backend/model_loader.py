@@ -33,7 +33,7 @@ def get_models():
         train_model, train_crop_models,
         save_models, load_models
     ) 
-    from dataset import load_dataset, load_dataset_by_crop
+    from backend.data.dataset import load_dataset, load_dataset_by_crop
 
     if _should_retrain():
         print("Training models (first run or scheduled retrain)...")
