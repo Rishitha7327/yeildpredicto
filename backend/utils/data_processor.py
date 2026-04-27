@@ -5,7 +5,7 @@ Retrieve and process predictions from MySQL database
 
 import pandas as pd
 from datetime import datetime, timedelta
-from new import get_db_connection
+from new import get_db_connection, get_param_marker
 
 
 # ==============================
@@ -45,9 +45,10 @@ def get_predictions_by_crop(crop_name):
     """Get predictions for specific crop"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM predictions WHERE crop = %s ORDER BY created_at DESC",
+                f"SELECT * FROM predictions WHERE crop = {m} ORDER BY created_at DESC",
                 (crop_name,)
             )
             return cursor.fetchall()
@@ -63,11 +64,12 @@ def get_predictions_by_location(lat, lon, radius_km=10):
         # Approximate: 1 degree = ~111 km
         degree_radius = radius_km / 111.0
         
+        m = get_param_marker()
         with conn.cursor() as cursor:
-            sql = """
+            sql = f"""
             SELECT * FROM predictions 
-            WHERE latitude BETWEEN %s AND %s 
-            AND longitude BETWEEN %s AND %s
+            WHERE latitude BETWEEN {m} AND {m} 
+            AND longitude BETWEEN {m} AND {m}
             ORDER BY created_at DESC
             """
             cursor.execute(sql, (
@@ -86,10 +88,11 @@ def get_predictions_by_date_range(start_date, end_date):
     """Get predictions within date range"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
         with conn.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM predictions 
-                   WHERE created_at BETWEEN %s AND %s 
+                f"""SELECT * FROM predictions 
+                   WHERE created_at BETWEEN {m} AND {m} 
                    ORDER BY created_at DESC""",
                 (start_date, end_date)
             )
@@ -139,8 +142,9 @@ def get_crop_statistics(crop_name):
     """Get statistics for specific crop"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
         df = pd.read_sql(
-            "SELECT * FROM predictions WHERE crop = %s",
+            f"SELECT * FROM predictions WHERE crop = {m}",
             conn,
             params=(crop_name,)
         )
@@ -196,10 +200,11 @@ def get_top_yielding_predictions(n=10):
     """Get top N highest yielding predictions"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
         with conn.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM predictions 
-                   ORDER BY predicted_yield DESC LIMIT %s""",
+                f"""SELECT * FROM predictions 
+                   ORDER BY predicted_yield DESC LIMIT {m}""",
                 (n,)
             )
             return cursor.fetchall()
@@ -212,11 +217,12 @@ def get_high_confidence_predictions(min_confidence=0.85, n=10):
     """Get predictions with high confidence (default: 85%)"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
         with conn.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM predictions 
-                   WHERE confidence >= %s 
-                   ORDER BY confidence DESC LIMIT %s""",
+                f"""SELECT * FROM predictions 
+                   WHERE confidence >= {m} 
+                   ORDER BY confidence DESC LIMIT {m}""",
                 (min_confidence, n)
             )
             return cursor.fetchall()
@@ -261,10 +267,11 @@ def get_recent_predictions(hours=24):
         time_threshold = datetime.now() - timedelta(hours=hours)
         conn = get_db_connection()
         
+        m = get_param_marker()
         with conn.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM predictions 
-                   WHERE created_at >= %s 
+                f"""SELECT * FROM predictions 
+                   WHERE created_at >= {m} 
                    ORDER BY created_at DESC""",
                 (time_threshold,)
             )
@@ -283,10 +290,11 @@ def get_yield_trends_by_crop(crop_name, days=30):
         conn = get_db_connection()
         time_threshold = datetime.now() - timedelta(days=days)
         
+        m = get_param_marker()
         df = pd.read_sql(
-            """SELECT created_at, predicted_yield, confidence 
+            f"""SELECT created_at, predicted_yield, confidence 
                FROM predictions 
-               WHERE crop = %s AND created_at >= %s 
+               WHERE crop = {m} AND created_at >= {m} 
                ORDER BY created_at""",
             conn,
             params=(crop_name, time_threshold)

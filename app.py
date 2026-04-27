@@ -17,9 +17,7 @@ from flask_cors import CORS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
-# ──────────────────────────────────────────────────────────
-# Load environment variables
-# ──────────────────────────────────────────────────────────
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -47,12 +45,12 @@ except Exception as e:
     print(f"⚠️ DB init failed (continuing): {e}")
 
 # ──────────────────────────────────────────────────────────
-# ✅ FIX: Correct imports (NO backend prefix)
+# ✅ FIX: Correct imports (Absolute paths)
 # ──────────────────────────────────────────────────────────
 try:
-    from routes.predict import predict_bp
-    from routes.translate import translate_bp
-    from routes.data import data_bp
+    from backend.routes.predict import predict_bp
+    from backend.routes.translate import translate_bp
+    from backend.routes.data import data_bp
 
     app.register_blueprint(predict_bp, url_prefix="/api")
     app.register_blueprint(translate_bp, url_prefix="/api")
@@ -60,6 +58,14 @@ try:
 
     print("✅ Routes loaded successfully")
 
+except ImportError as e:
+    print(f"❌ ImportError loading routes: {e}")
+    # Fallback for local dev if backend is not in path correctly
+    try:
+        from routes.predict import predict_bp
+        # ...
+    except:
+        traceback.print_exc()
 except Exception as e:
     print("❌ ERROR loading routes:", e)
     traceback.print_exc()

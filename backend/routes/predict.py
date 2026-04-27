@@ -12,7 +12,7 @@ from backend.data.dataset import FEATURE_COLS
 from backend.models.model import predict_yield
 
 import pandas as pd
-from new import get_db_connection
+from new import get_db_connection, get_param_marker, get_now_fn
 
 predict_bp = Blueprint("predict", __name__)
 
@@ -23,13 +23,16 @@ def save_prediction_to_db(crop, lat, lon, prediction, confidence, weather_data, 
     """Save prediction results to database"""
     try:
         conn = get_db_connection()
+        m = get_param_marker()
+        now = get_now_fn()
+        
         with conn.cursor() as cursor:
             # Example table structure - adjust according to your database schema
-            sql = """
+            sql = f"""
             INSERT INTO predictions
             (crop, latitude, longitude, predicted_yield, confidence,
              temperature, humidity, rainfall, soil_n, soil_p, soil_k, soil_ph, location_name, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            VALUES ({m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {m}, {now})
             """
             cursor.execute(sql, (
                 crop, lat, lon, prediction, confidence,

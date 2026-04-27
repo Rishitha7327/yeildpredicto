@@ -93,9 +93,23 @@ def close_db():
         print("🔌 DB connection closed")
 
 
+def get_param_marker():
+    """Returns %s for MySQL, ? for SQLite"""
+    global _using_sqlite
+    return "?" if _using_sqlite else "%s"
+
+
+def get_now_fn():
+    """Returns SQL function for current timestamp"""
+    global _using_sqlite
+    return "CURRENT_TIMESTAMP" if _using_sqlite else "NOW()"
+
+
 class DatabaseManager:
     def connect(self):       return init_db()
     def get_connection(self): return get_db_connection()
     def close(self):         return close_db()
+    def get_marker(self):    return get_param_marker()
+    def get_now(self):       return get_now_fn()
 
 db_manager = DatabaseManager()
