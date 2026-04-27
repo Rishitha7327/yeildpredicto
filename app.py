@@ -77,7 +77,7 @@ def index():
 
 @app.route('/predict')
 @app.route('/predict.html')
-def predict_page():
+def predict():
     return render_template('predict.html')
 
 @app.route('/calendar')
