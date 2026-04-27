@@ -5,11 +5,15 @@ Run with: python app.py
 
 import sys
 import os
-import atexit
-import traceback
 
 # ── Ensure backend module is discoverable ──────────────────
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the directory containing this file to Python path for imports
+_app_dir = os.path.dirname(os.path.abspath(__file__))
+if _app_dir not in sys.path:
+    sys.path.insert(0, _app_dir)
+
+import atexit
+import traceback
 
 from flask import Flask, jsonify, render_template, send_from_directory
 from flask_cors import CORS
