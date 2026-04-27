@@ -45,9 +45,9 @@ def save_prediction_to_db(crop, lat, lon, prediction, confidence, weather_data, 
                 soil_data.get("ph"),
                 location_name
             ))
-            print(f"💾 Prediction saved to database for crop: {crop}")
+            print(f"Prediction saved to database for crop: {crop}")
     except Exception as e:
-        print(f"❌ Database save error: {e}")
+        print(f"Database save error: {e}")
         raise
 
 # ==============================
@@ -148,7 +148,7 @@ def predict():
                 location_name=location_name
             )
         except Exception as db_error:
-            print(f"⚠️  Failed to save to database: {db_error}")
+            print(f"Failed to save to database: {db_error}")
             # Continue with response even if DB save fails
 
         # ==============================

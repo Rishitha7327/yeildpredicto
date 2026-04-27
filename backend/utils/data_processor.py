@@ -20,7 +20,7 @@ def get_all_predictions():
             predictions = cursor.fetchall()
             return predictions
     except Exception as e:
-        print(f"❌ Error fetching predictions: {e}")
+        print(f"Error fetching predictions: {e}")
         return []
 
 
@@ -34,7 +34,7 @@ def get_predictions_dataframe():
         df = pd.read_sql("SELECT * FROM predictions ORDER BY created_at DESC", conn)
         return df
     except Exception as e:
-        print(f"❌ Error converting to DataFrame: {e}")
+        print(f"Error converting to DataFrame: {e}")
         return pd.DataFrame()
 
 
@@ -53,7 +53,7 @@ def get_predictions_by_crop(crop_name):
             )
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error filtering by crop: {e}")
+        print(f"Error filtering by crop: {e}")
         return []
 
 
@@ -80,7 +80,7 @@ def get_predictions_by_location(lat, lon, radius_km=10):
             ))
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error filtering by location: {e}")
+        print(f"Error filtering by location: {e}")
         return []
 
 
@@ -98,7 +98,7 @@ def get_predictions_by_date_range(start_date, end_date):
             )
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error filtering by date: {e}")
+        print(f"Error filtering by date: {e}")
         return []
 
 
@@ -111,7 +111,7 @@ def get_statistics():
         df = get_predictions_dataframe()
         
         if df.empty:
-            print("⚠️  No predictions found in database")
+            print("No predictions found in database")
             return {"status": "no_data", "message": "No predictions found in database"}
         
         stats = {
@@ -129,10 +129,10 @@ def get_statistics():
             "average_soil_moisture": round(float(df['soil_moisture'].mean()), 2),
             "average_soil_ph": round(float(df['soil_ph'].mean()), 2),
         }
-        print("✅ Statistics calculated successfully")
+        print("Statistics calculated successfully")
         return stats
     except Exception as e:
-        print(f"❌ Error calculating statistics: {e}")
+        print(f"Error calculating statistics: {e}")
         import traceback
         traceback.print_exc()
         return {"status": "error", "message": str(e)}
@@ -167,7 +167,7 @@ def get_crop_statistics(crop_name):
         }
         return stats
     except Exception as e:
-        print(f"❌ Error calculating crop statistics: {e}")
+        print(f"Error calculating crop statistics: {e}")
         return {}
 
 
@@ -192,7 +192,7 @@ def get_predictions_grouped_by_crop():
         
         return grouped.to_dict()
     except Exception as e:
-        print(f"❌ Error grouping by crop: {e}")
+        print(f"Error grouping by crop: {e}")
         return {}
 
 
@@ -209,7 +209,7 @@ def get_top_yielding_predictions(n=10):
             )
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error fetching top predictions: {e}")
+        print(f"Error fetching top predictions: {e}")
         return []
 
 
@@ -227,7 +227,7 @@ def get_high_confidence_predictions(min_confidence=0.85, n=10):
             )
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error fetching high confidence predictions: {e}")
+        print(f"Error fetching high confidence predictions: {e}")
         return []
 
 
@@ -239,10 +239,10 @@ def export_to_csv(filename="predictions_export.csv"):
     try:
         df = get_predictions_dataframe()
         df.to_csv(filename, index=False)
-        print(f"✅ Data exported to {filename}")
+        print(f"Data exported to {filename}")
         return filename
     except Exception as e:
-        print(f"❌ Error exporting to CSV: {e}")
+        print(f"Error exporting to CSV: {e}")
         return None
 
 
@@ -251,10 +251,10 @@ def export_to_json(filename="predictions_export.json"):
     try:
         df = get_predictions_dataframe()
         df.to_json(filename, orient='records', indent=2, default_handler=str)
-        print(f"✅ Data exported to {filename}")
+        print(f"Data exported to {filename}")
         return filename
     except Exception as e:
-        print(f"❌ Error exporting to JSON: {e}")
+        print(f"Error exporting to JSON: {e}")
         return None
 
 
@@ -277,7 +277,7 @@ def get_recent_predictions(hours=24):
             )
             return cursor.fetchall()
     except Exception as e:
-        print(f"❌ Error fetching recent predictions: {e}")
+        print(f"Error fetching recent predictions: {e}")
         return []
 
 
@@ -319,5 +319,5 @@ def get_yield_trends_by_crop(crop_name, days=30):
             "data": df.to_dict(orient='index')
         }
     except Exception as e:
-        print(f"❌ Error analyzing trends: {e}")
+        print(f"Error analyzing trends: {e}")
         return {}

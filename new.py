@@ -50,14 +50,14 @@ def _init_sqlite():
         )
     """)
     _conn.commit()
-    print(f"📦 SQLite DB ready: {SQLITE_PATH}")
+    print(f"DB ready: {SQLITE_PATH}")
     return _conn
 
 
 def _init_mysql():
     import pymysql
     global _conn, _using_sqlite
-    print(f"🔌 Connecting to MySQL: {DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    print(f"Connecting to MySQL: {DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
     _conn = pymysql.connect(
         host=DB_HOST, port=DB_PORT,
         user=DB_USER, password=DB_PASSWORD,
@@ -66,7 +66,7 @@ def _init_mysql():
         autocommit=True,
     )
     _using_sqlite = False
-    print("✅ MySQL connected")
+    print("MySQL connected")
     return _conn
 
 
@@ -74,7 +74,7 @@ def init_db():
     try:
         return _init_mysql()
     except Exception as e:
-        print(f"⚠️  MySQL unavailable ({e}) — using SQLite fallback")
+        print(f"MySQL unavailable ({e}) - using SQLite fallback")
         return _init_sqlite()
 
 
@@ -90,7 +90,7 @@ def close_db():
     if _conn:
         _conn.close()
         _conn = None
-        print("🔌 DB connection closed")
+        print("DB connection closed")
 
 
 def get_param_marker():

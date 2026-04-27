@@ -11,9 +11,7 @@ import traceback
 from flask import Flask, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
-# ──────────────────────────────────────────────────────────
-# ✅ FIX: Ensure root path is correct (for imports)
-# ──────────────────────────────────────────────────────────
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
@@ -22,7 +20,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    print("⚠️ dotenv not installed")
+    print("dotenv not installed")
 
 # ──────────────────────────────────────────────────────────
 # Flask setup
@@ -39,10 +37,10 @@ CORS(app)
 try:
     from new import init_db, close_db
     init_db()
-    print("📊 Database connected successfully")
+    print("Database connected successfully")
     atexit.register(close_db)
 except Exception as e:
-    print(f"⚠️ DB init failed (continuing): {e}")
+    print(f"DB init failed (continuing): {e}")
 
 # ──────────────────────────────────────────────────────────
 # ✅ FIX: Correct imports (Absolute paths)
@@ -56,10 +54,10 @@ try:
     app.register_blueprint(translate_bp, url_prefix="/api")
     app.register_blueprint(data_bp, url_prefix="/api")
 
-    print("✅ Routes loaded successfully")
+    print("Routes loaded successfully")
 
 except ImportError as e:
-    print(f"❌ ImportError loading routes: {e}")
+    print(f"ImportError loading routes: {e}")
     # Fallback for local dev if backend is not in path correctly
     try:
         from routes.predict import predict_bp
@@ -67,7 +65,7 @@ except ImportError as e:
     except:
         traceback.print_exc()
 except Exception as e:
-    print("❌ ERROR loading routes:", e)
+    print("ERROR loading routes:", e)
     traceback.print_exc()
 
 # ──────────────────────────────────────────────────────────
@@ -132,7 +130,7 @@ def catch_all(path):
 # ──────────────────────────────────────────────────────────
 @app.errorhandler(Exception)
 def handle_exception(e):
-    print("❌ ERROR:", str(e))
+    print("ERROR:", str(e))
     traceback.print_exc()
     return jsonify({"error": str(e)}), 500
 
@@ -144,7 +142,7 @@ if __name__ == '__main__':
     debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
 
     print("\n" + "="*50)
-    print("🚀 Yeildpredicto Server Starting")
+    print("Yeildpredicto Server Starting")
     print(f"Port  : {port}")
     print(f"Debug : {debug_mode}")
     print("="*50 + "\n")
