@@ -451,39 +451,6 @@ The platform now includes a **floating Grok chatbot** available on every page th
 - 🔄 Real-time responses using Grok API
 - 📲 Badge notification for unread messages
 
-### Setup Grok Chatbot
-
-1. **Get a Grok API Key:**
-   - Visit [console.x.ai](https://console.x.ai)
-   - Create an account and generate an API key
-
-2. **Add to .env file:**
-   ```bash
-   GROK_API_KEY=your_api_key_here
-   ```
-
-3. **Install dependencies:**
-   The `openai` library is already in `requirements.txt` for Grok API compatibility.
-
-4. **The chatbot will automatically:**
-   - Appear as a floating icon on all pages (bottom-right)
-   - Show on home, prediction, calendar, tips, and how-it-works pages
-   - Store conversation history locally
-   - Work without requiring user authentication
-## 🔧 Troubleshooting
-
-### Deploy fails with "Exited with status 1"
-
-**Problem:** Build succeeds but app crashes on startup.
-
-**Cause:** The dataset file (`dataset/all_india_crop_dataset_59crops.xlsx`) is missing on Render. This file is gitignored because it's too large to commit.
-
-**Solution:**
-1. The app now has a fallback mechanism — it will start even without the dataset
-2. Models will use placeholder predictions until trained
-3. **To train real models:** Upload your dataset file locally, run `python app.py` to train, then commit the `backend/models/trained_model.pkl` file
-4. Or provide the dataset via a private storage service and download it during the build
-
 **Option A: Use pre-trained model (Recommended)**
 ```bash
 # Local: train model first
