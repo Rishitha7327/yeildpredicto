@@ -147,7 +147,7 @@ if __name__ == '__main__':
     print(f"Debug : {debug_mode}")
     print("="*50 + "\n")
 
-    print("📌 Routes:")
+    print("Routes:")
     for rule in app.url_map.iter_rules():
         print(f"{rule.methods} {rule.rule}")
 

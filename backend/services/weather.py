@@ -69,7 +69,7 @@ def get_weather(lat=17.3850, lon=78.4867):
         }
 
     except Exception as e:
-        print("⚠️ Weather API Error:", e)
+        print("Weather API Error:", e)
 
         # ==============================
         # SMART FALLBACK 🔥

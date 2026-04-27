@@ -17,7 +17,7 @@ MODEL_PATH = os.path.join(BASE_DIR, "models/trained_model.pkl")
 
 def _should_retrain():
     if not os.path.exists(MODEL_PATH):
-        print("⚠️ No trained model found → training required")
+        print("No trained model found -> training required")
         return True
     last_modified = os.path.getmtime(MODEL_PATH)
     return (time.time() - last_modified) > RETRAIN_INTERVAL
@@ -36,28 +36,28 @@ def get_models():
     from dataset import load_dataset, load_dataset_by_crop
 
     if _should_retrain():
-        print("🔄 Training models (first run or scheduled retrain)...")
+        print("Training models (first run or scheduled retrain)...")
         try:
             X, y = load_dataset()
             crop_data = load_dataset_by_crop()
             _general_model = train_model(X, y)
             _crop_models = train_crop_models(crop_data, _general_model)
             save_models(_general_model, _crop_models)
-            print("✅ Models trained and saved")
+            print("Models trained and saved")
         except FileNotFoundError as e:
-            print(f"⚠️  Dataset file not found: {e}")
-            print("⚠️  Using fallback mock models (predictions will be placeholder values)")
+            print(f"Dataset file not found: {e}")
+            print("Using fallback mock models (predictions will be placeholder values)")
             _general_model, _crop_models = _fallback_models()
         except Exception as e:
-            print(f"❌ Training failed: {e}")
-            print("⚠️ Using fallback mock models")
+            print(f"Training failed: {e}")
+            print("Using fallback mock models")
             _general_model, _crop_models = _fallback_models()
     else:
         try:
             _general_model, _crop_models = load_models()
-            print("✅ Models loaded from disk")
+            print("Models loaded from disk")
         except Exception as e:
-            print(f"❌ Model load failed: {e}")
+            print(f"Model load failed: {e}")
             _general_model, _crop_models = _fallback_models()
 
     return _general_model, _crop_models

@@ -15,7 +15,7 @@ try:
     GOOGLETRANS_AVAILABLE = True
 except ImportError:
     GOOGLETRANS_AVAILABLE = False
-    print("⚠️  googletrans not installed. Run: pip install googletrans==4.0.0-rc1")
+    print("googletrans not installed. Run: pip install googletrans==4.0.0-rc1")
 
 # Supported language codes
 SUPPORTED_LANGS = {
@@ -93,7 +93,7 @@ def translate_test():
     return {"message": "Translator working!"}
 
 
-# ✅ FIX: translate_batch was missing its @route decorator — endpoint was unreachable
+# FIX: translate_batch was missing its @route decorator — endpoint was unreachable
 @translate_bp.route('/utils/translate-batch', methods=['POST'])
 def translate_batch():
     """
