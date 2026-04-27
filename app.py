@@ -3,9 +3,13 @@ app.py — Yeildpredicto Flask Application
 Run with: python app.py
 """
 
+import sys
 import os
 import atexit
 import traceback
+
+# ── Ensure backend module is discoverable ──────────────────
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, jsonify, render_template, send_from_directory
 from flask_cors import CORS
@@ -38,12 +42,12 @@ except Exception as e:
 from backend.routes.predict   import predict_bp
 from backend.routes.translate import translate_bp
 from backend.routes.data      import data_bp
-from backend.routes.chat      import chat_bp
+# from backend.routes.chat      import chat_bp
 
 app.register_blueprint(predict_bp,   url_prefix="/api")
 app.register_blueprint(translate_bp, url_prefix="/api")
 app.register_blueprint(data_bp,      url_prefix="/api")
-app.register_blueprint(chat_bp,      url_prefix="/api")
+# app.register_blueprint(chat_bp,      url_prefix="/api")
 
 # ── Page routes ────────────────────────────────────────────
 @app.route('/')
