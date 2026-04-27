@@ -1,66 +1,79 @@
 """
 app.py — Yeildpredicto Flask Application
-Run with: python app.py
+Production-ready (Render compatible)
 """
 
-import sys
 import os
-
-# ── Ensure backend module is discoverable ──────────────────
-# Add the directory containing this file to Python path for imports
-_app_dir = os.path.dirname(os.path.abspath(__file__))
-if _app_dir not in sys.path:
-    sys.path.insert(0, _app_dir)
-
+import sys
 import atexit
 import traceback
 
 from flask import Flask, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
+# ──────────────────────────────────────────────────────────
+# ✅ FIX: Ensure root path is correct (for imports)
+# ──────────────────────────────────────────────────────────
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+
+# ──────────────────────────────────────────────────────────
+# Load environment variables
+# ──────────────────────────────────────────────────────────
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass
+    print("⚠️ dotenv not installed")
 
-# ── Directory setup ────────────────────────────────────────
-BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR    = os.path.join(BASE_DIR, 'static')
+# ──────────────────────────────────────────────────────────
+# Flask setup
+# ──────────────────────────────────────────────────────────
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 
-# ── Create Flask app ───────────────────────────────────────
 app = Flask(__name__, static_folder=STATIC_DIR, template_folder=TEMPLATES_DIR)
 CORS(app)
 
-# ── Database init ──────────────────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Database init (safe)
+# ──────────────────────────────────────────────────────────
 try:
     from new import init_db, close_db
     init_db()
     print("📊 Database connected successfully")
     atexit.register(close_db)
 except Exception as e:
-    print(f"⚠️  DB init failed (running without DB): {e}")
+    print(f"⚠️ DB init failed (continuing): {e}")
 
-# ── Register API Blueprints ────────────────────────────────
-from backend.routes.predict   import predict_bp
-from backend.routes.translate import translate_bp
-from backend.routes.data      import data_bp
-# from backend.routes.chat      import chat_bp
+# ──────────────────────────────────────────────────────────
+# ✅ FIX: Correct imports (NO backend prefix)
+# ──────────────────────────────────────────────────────────
+try:
+    from routes.predict import predict_bp
+    from routes.translate import translate_bp
+    from routes.data import data_bp
 
-app.register_blueprint(predict_bp,   url_prefix="/api")
-app.register_blueprint(translate_bp, url_prefix="/api")
-app.register_blueprint(data_bp,      url_prefix="/api")
-# app.register_blueprint(chat_bp,      url_prefix="/api")
+    app.register_blueprint(predict_bp, url_prefix="/api")
+    app.register_blueprint(translate_bp, url_prefix="/api")
+    app.register_blueprint(data_bp, url_prefix="/api")
 
-# ── Page routes ────────────────────────────────────────────
+    print("✅ Routes loaded successfully")
+
+except Exception as e:
+    print("❌ ERROR loading routes:", e)
+    traceback.print_exc()
+
+# ──────────────────────────────────────────────────────────
+# Page routes
+# ──────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/predict')
 @app.route('/predict.html')
-def predict():
+def predict_page():
     return render_template('predict.html')
 
 @app.route('/calendar')
@@ -78,48 +91,60 @@ def how():
 def tips():
     return render_template('tips.html')
 
-# ── Favicon ────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Favicon
+# ──────────────────────────────────────────────────────────
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(
         os.path.join(STATIC_DIR, 'images'),
-        'favicon.svg', mimetype='image/svg+xml'
+        'favicon.svg',
+        mimetype='image/svg+xml'
     )
 
-# ── Health check ───────────────────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Health check (important for Render)
+# ──────────────────────────────────────────────────────────
 @app.route('/api/health')
 def health():
     return jsonify({"status": "ok", "service": "Yeildpredicto"})
 
-# ── Fallback for unknown paths ─────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Catch-all (SPA support)
+# ──────────────────────────────────────────────────────────
 @app.route('/<path:path>')
 def catch_all(path):
     static_file = os.path.join(STATIC_DIR, path)
+
     if os.path.isfile(static_file):
         return send_from_directory(STATIC_DIR, path)
+
     return render_template('index.html')
 
-# ── Global error handler ───────────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Global error handler
+# ──────────────────────────────────────────────────────────
 @app.errorhandler(Exception)
 def handle_exception(e):
     print("❌ ERROR:", str(e))
     traceback.print_exc()
     return jsonify({"error": str(e)}), 500
 
-# ── Startup ────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────
+# Startup
+# ──────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    port       = int(os.environ.get("FLASK_PORT", 5000))
-    debug_mode = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
+    port = int(os.environ.get("PORT", 5000))   # ✅ FIX for Render
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
 
-    print(f"\n{'='*50}")
+    print("\n" + "="*50)
     print("🚀 Yeildpredicto Server Starting")
-    print(f"   Debug : {debug_mode}")
-    print(f"   Port  : {port}")
-    print(f"   URL   : http://localhost:{port}")
-    print(f"{'='*50}\n")
+    print(f"Port  : {port}")
+    print(f"Debug : {debug_mode}")
+    print("="*50 + "\n")
 
     print("📌 Routes:")
     for rule in app.url_map.iter_rules():
-        print(f"   {rule.methods} {rule.rule}")
+        print(f"{rule.methods} {rule.rule}")
 
-    app.run(debug=debug_mode, host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

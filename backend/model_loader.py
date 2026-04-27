@@ -29,11 +29,10 @@ def get_models():
     # Return cached models if already loaded
     if _general_model is not None and _crop_models is not None:
         return _general_model, _crop_models
-
     from backend.models.model import (
         train_model, train_crop_models,
         save_models, load_models
-    )
+    ) 
     from dataset import load_dataset, load_dataset_by_crop
 
     if _should_retrain():
